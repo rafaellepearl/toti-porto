@@ -1,4 +1,4 @@
-# Toti Video — Efraim Toti's portfolio
+# Efraim Video — Efraim Toti's portfolio
 
 A static site with no build step. A drawn video store: the storefront at night, then shelves of tapes you can open. All artwork is painted by JavaScript on canvas — there are no image files.
 

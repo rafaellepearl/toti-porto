@@ -139,7 +139,7 @@ function paintCover(cv, tape) {
   cv.width = W; cv.height = H; const g = cv.getContext("2d");
   (ART[tape.art] || ART.arthouse)(g, tape.title);
   // box furniture shared by every tape
-  R(g, 0, H - 46, W, 46, INK, null); T(g, "TOTI VIDEO", 16, H - 21, 30, OSD, CREAM, { align: "left" }); T(g, "VHS", W - 150, H - 21, 30, OSD, CREAM, { align: "right" });
+  R(g, 0, H - 46, W, 46, INK, null); T(g, "EFRAIM VIDEO", 16, H - 21, 30, OSD, CREAM, { align: "left" }); T(g, "VHS", W - 150, H - 21, 30, OSD, CREAM, { align: "right" });
   [CREAM, YEL, SKY, GREEN, ORANGE, RED, BLUE].forEach((c, i) => R(g, W - 136 + i * 17, H - 34, 17, 22, c, null));
   // album-style frame: paper margin, then one clean ink line
   g.strokeStyle = CREAM; g.lineWidth = 12; g.strokeRect(12, 12, W - 24, H - 70);

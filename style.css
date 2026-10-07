@@ -159,6 +159,10 @@ dialog h3{font-family:var(--osd);font-size:1.4rem;font-weight:400;text-transform
 .works p{margin:0 0 .6em}
 .works .btn{font-size:1.25rem;background:var(--acc)}
 .out{font-family:var(--osd);font-weight:400;font-size:1.2rem;text-transform:uppercase;opacity:.75}
+.thumb{display:block;position:relative;aspect-ratio:16/9;border:3px solid var(--ink);margin:0 0 .8em;background:#000;overflow:hidden;box-shadow:4px 4px 0 var(--ink)}
+.thumb img{display:block;width:100%;height:100%;object-fit:cover}
+.thumb .play{position:absolute;left:50%;top:50%;width:64px;height:64px;margin:-32px;border-radius:50%;background:var(--yel);border:3px solid var(--ink);color:var(--ink);font-size:1.6rem;line-height:58px;text-align:center;padding-left:5px}
+.thumb:hover .play,.thumb:focus-visible .play{background:var(--cream);transform:scale(1.1)}
 .yt{display:block;width:100%;aspect-ratio:16/9;border:3px solid var(--ink);margin:0 0 .8em;background:#000}
 .photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
 .photos figure{margin:0}.photos img{display:block;width:100%;border:3px solid var(--ink)}

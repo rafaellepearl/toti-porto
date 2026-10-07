@@ -1,4 +1,4 @@
-/* TOTI VIDEO — a drawn video store. Click the door, walk in, slide along the shelves, pull a tape. */
+/* EFRAIM VIDEO — a drawn video store. Click the door, walk in, slide along the shelves, pull a tape. */
 (async () => {
 const { paintCover, INK, CREAM, RED, YEL, BLUE, GREEN, ORANGE, SKY } = window.COVERS;
 
@@ -78,7 +78,7 @@ let doorOpen = 0, redrawScene = () => {};
     const sw = bw * .74, shh = bw * .15, sx = cx - sw / 2, sy = by - bw * .03 - shh - bw * .025;
     line(x, sx + sw * .15, sy + shh, sx + sw * .15, by, INK, 5); line(x, sx + sw * .85, sy + shh, sx + sw * .85, by, INK, 5);
     rect(x, sx, sy, sw, shh, INK, 4); x.strokeStyle = YEL; x.globalAlpha = flick; x.lineWidth = 2; x.strokeRect(sx + 6, sy + 6, sw - 12, shh - 12);
-    x.font = `${shh * .6}px ${DISP}`; x.fillStyle = YEL; x.fillText("TOTI VIDEO", cx, sy + shh * .55); x.globalAlpha = 1;
+    x.font = `${shh * .6}px ${DISP}`; x.fillStyle = YEL; x.fillText("EFRAIM VIDEO", cx, sy + shh * .55); x.globalAlpha = 1;
     const lx = wide ? bx + bw * 1.12 : bx - bw * .06, lh = bh * 1.5;
     if (lx > 16 && lx < W - 16) { line(x, lx, base + 18, lx, base - lh, INK, 6); line(x, lx, base - lh, lx - bw * .06, base - lh, INK, 6); rect(x, lx - bw * .09, base - lh, bw * .05, 8, YEL, 2.5); }
     // a customer on the way in, shifting from foot to foot
@@ -237,7 +237,7 @@ function drawCassette(d, t) {
     for (let i = 0; i < 3; i++) { const g = t * 1.6 * dir + i * 2.094; line(x, a, 121, a + Math.cos(g) * 16, 121 + Math.sin(g) * 16, INK, 3); }
     circ(x, a, 121, 4, INK, 0);
   });
-  [YEL, RED, BLUE].forEach((c, i) => rect(x, 28 + i * 22, 170, 22, 10, c, 0)); x.font = `18px ${OSD}`; x.textAlign = "right"; x.fillStyle = CREAM; x.fillText("TOTI VIDEO · E-180", 292, 176);
+  [YEL, RED, BLUE].forEach((c, i) => rect(x, 28 + i * 22, 170, 22, 10, c, 0)); x.font = `18px ${OSD}`; x.textAlign = "right"; x.fillStyle = CREAM; x.fillText("EFRAIM VIDEO · E-180", 292, 176);
 }
 function openTape(d, btn) {
   // the tape leaves the shelf: a copy of its cover flies to the middle of the screen, turning once, then the box opens
@@ -259,13 +259,19 @@ function showBox(d) {
   dlg.style.setProperty("--bg", d.colors.bg); dlg.style.setProperty("--fg", d.colors.fg); dlg.style.setProperty("--acc", d.colors.acc);
   paintCover($("#box-cover"), d);
   const h2 = el("h2", "", d.name); h2.id = "box-title";
-  body.replaceChildren(el("p", "p-genre", d.genre + " · Toti Video"), h2, el("p", "p-tag", d.tagline), el("p", "p-blurb", d.blurb), el("h3", "", "On this tape"));
+  body.replaceChildren(el("p", "p-genre", d.genre + " · Efraim Video"), h2, el("p", "p-tag", d.tagline), el("p", "p-blurb", d.blurb), el("h3", "", "On this tape"));
   if (d.works.length) {
     const ol = el("ol", "works");
     d.works.forEach(w => {
       const li = el("li"); li.append(el("b", "", w.title), el("span", "meta", [w.year, w.role].filter(Boolean).join(" · ")), el("p", "", w.text));
       const yt = w.link && w.link.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([\w-]{11})/);
-      if (yt) { const f = el("iframe", "yt"); f.src = "https://www.youtube-nocookie.com/embed/" + yt[1]; f.title = w.title; f.loading = "lazy"; f.allow = "accelerometer; encrypted-media; picture-in-picture; fullscreen"; f.allowFullscreen = true; li.append(f); }
+      if (yt) {   // the video's own thumbnail; on a web server a click plays it in place, otherwise it opens YouTube
+        const t = el("a", "thumb"); t.href = w.link; t.target = "_blank"; t.rel = "noopener"; t.setAttribute("aria-label", "Play " + w.title);
+        const im = new Image(); im.src = "https://i.ytimg.com/vi/" + yt[1] + "/hqdefault.jpg"; im.alt = ""; im.loading = "lazy"; t.append(im, el("span", "play", "▶"));
+        t.onclick = e => { if (!location.protocol.startsWith("http")) return; e.preventDefault();
+          const f = el("iframe", "yt"); f.src = "https://www.youtube-nocookie.com/embed/" + yt[1] + "?autoplay=1"; f.title = w.title; f.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen"; f.allowFullscreen = true; t.replaceWith(f); };
+        li.append(t);
+      }
       if (w.link) { const a = el("a", "btn", w.linkLabel || (yt ? "▶ Watch on YouTube" : "▶ Watch")); a.href = w.link; a.target = "_blank"; a.rel = "noopener"; li.append(a); }
       else li.append(el("span", "out", "Tape checked out — ask at the counter"));
       ol.append(li);
