@@ -3,69 +3,149 @@
   --text:"Comic Neue","Comic Sans MS",ui-rounded,sans-serif; --osd:"VT323",monospace; --disp:"Bowlby One",Impact,sans-serif; --tall:"Anton",Impact,sans-serif;
 }
 *{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{margin:0;background:var(--wall);color:var(--ink);font-family:var(--text);font-weight:700;font-size:17px;line-height:1.5;overflow-x:hidden}
+html,body{height:100%}
+body{margin:0;background:#1b2f6b;color:var(--ink);font-family:var(--text);font-weight:700;font-size:17px;line-height:1.5;overflow:hidden;overscroll-behavior:none}
 a{color:inherit}
+button{font:inherit;color:inherit}
 .small{font-size:.85rem;opacity:.8}
 
-/* faint VHS dressing */
 .scan{position:fixed;inset:0;pointer-events:none;z-index:30;background:repeating-linear-gradient(to bottom,rgba(0,0,0,.07) 0 1px,transparent 1px 3px)}
-.osd{position:absolute;z-index:31;font-family:var(--osd);font-weight:400;font-size:clamp(1.1rem,2.2vw,1.5rem);color:#fff;text-shadow:2px 0 var(--red),-2px 0 var(--blue),0 0 4px #000;pointer-events:none;letter-spacing:.05em}
-.osd-tl{top:12px;left:16px}.osd-bl{top:calc(max(100svh,560px) - 44px);left:16px}
+.osd{position:fixed;z-index:31;font-family:var(--osd);font-weight:400;font-size:clamp(1.1rem,2.2vw,1.5rem);color:#fff;text-shadow:2px 0 var(--red),-2px 0 var(--blue),0 0 4px #000;pointer-events:none;letter-spacing:.05em}
+.osd-tl{top:10px;left:16px}.osd-bl{bottom:8px;left:16px}
+#veil{position:fixed;inset:0;z-index:20;background:#fbeeb4;opacity:0;pointer-events:none;transition:opacity .4s}
+#veil.on{opacity:1}
+
+.place{position:fixed;inset:0;overflow:hidden;visibility:hidden}
+body[data-place=outside] #outside,body[data-place=inside] #inside{visibility:visible}
 
 /* ---------- outside ---------- */
-.hero{position:relative;height:100svh;min-height:560px;overflow:hidden;border-bottom:5px solid var(--ink);background:#1b2f6b}
+#outside{background:#1b2f6b}
+#zoomer{position:absolute;inset:0;will-change:transform}
+#zoomer.go{transition:transform 1.15s cubic-bezier(.55,0,.85,.35);transform:scale(9)}
 #scene{position:absolute;inset:0;width:100%;height:100%;display:block}
-.hero-text{position:relative;padding:64px 5vw 0;color:var(--cream);max-width:calc(520px + 5vw)}
+#door{position:absolute;background:none;border:0;padding:0;cursor:pointer}
+#door .ring{position:absolute;left:50%;top:50%;width:70px;height:70px;margin:-35px;border:5px solid var(--yel);border-radius:50%;animation:ring 1.6s ease-out infinite}
+#door .hint{position:absolute;left:50%;bottom:100%;transform:translateX(-50%);margin-bottom:6px;white-space:nowrap;font-family:var(--osd);font-weight:400;font-size:1.2rem;text-transform:uppercase;background:var(--yel);border:3px solid var(--ink);padding:0 8px;animation:hop 1.2s ease-in-out infinite}
+#door:focus-visible{outline:4px solid var(--yel)}
+@keyframes ring{0%{transform:scale(.3);opacity:1}100%{transform:scale(1.5);opacity:0}}
+@keyframes hop{50%{transform:translate(-50%,-7px)}}
+.hero-text{position:relative;padding:54px 5vw 0;color:var(--cream);max-width:calc(520px + 5vw);transition:opacity .3s}
+.entering .hero-text,.entering #door{opacity:0;pointer-events:none}
 .kicker{font-family:var(--osd);font-weight:400;font-size:1.5rem;color:var(--yel);margin:0;text-transform:uppercase;letter-spacing:.12em}
 h1{font-family:var(--disp);font-weight:400;font-size:clamp(3rem,10vw,7.5rem);line-height:.9;margin:.1em 0 .2em;text-transform:uppercase;color:var(--yel);-webkit-text-stroke:2px var(--ink);text-shadow:5px 5px 0 var(--red),7px 7px 0 var(--ink)}
 .roles{font-size:clamp(.8rem,1.6vw,1rem);margin:0 0 1.1em;max-width:34em;background:var(--ink);display:inline-block;padding:4px 8px}
 .btn{display:inline-block;font-family:var(--osd);font-weight:400;font-size:1.5rem;text-transform:uppercase;text-decoration:none;color:var(--ink);background:var(--yel);padding:4px 18px;border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink);cursor:pointer}
 .btn:hover,.btn:focus-visible{background:var(--cream)}
 
-/* ---------- inside ---------- */
-main{background:
-  repeating-linear-gradient(105deg,var(--ink) 0 1.5px,transparent 1.5px 9px) 0 0/100% 22px no-repeat,
-  var(--wall)}
-section{max-width:1100px;margin:0 auto;padding:64px 18px 40px}
-.caption{background:#fbeeb4;border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink);padding:14px 18px 12px;max-width:520px;margin-bottom:28px}
-.caption h2{font-family:var(--disp);font-weight:400;font-size:clamp(1.6rem,5vw,2.6rem);line-height:1;margin:.15em 0 .2em;text-transform:uppercase}
-.caption p{margin:0 0 .5em}
-.chip{display:inline-block;font-family:var(--osd);font-weight:400;font-size:1.25rem;text-transform:uppercase;letter-spacing:.08em;background:var(--red);color:var(--cream);padding:0 10px;border:3px solid var(--ink);transform:rotate(-2deg)}
+/* ---------- inside: one long drawn room you slide along ---------- */
+#inside{background:var(--wall);touch-action:none;cursor:grab}
+#inside.arrive{animation:arrive .9s cubic-bezier(.15,.8,.3,1)}
+@keyframes arrive{from{transform:scale(1.5);opacity:.2}}
+#stage{position:absolute;left:0;top:0;height:800px;transform:scale(var(--s,1));transform-origin:0 0}
+.layer{position:absolute;left:0;top:0;height:800px;will-change:transform}
+.layer>*{position:absolute}
+#L-ceil,#L-fg{pointer-events:none}
+.ceil{background:var(--cream);border-bottom:4px solid var(--ink)}
+.wall{background:repeating-linear-gradient(105deg,var(--ink) 0 1.5px,transparent 1.5px 9px) 0 0/100% 24px no-repeat,var(--wall)}
+.floor{border-top:4px solid var(--ink);background:repeating-linear-gradient(90deg,transparent 0 118px,var(--ink) 118px 120px),linear-gradient(transparent 0 58px,var(--ink) 58px 60px,transparent 60px),var(--sand)}
+.inkbox{border:4px solid var(--ink)}
+.exit{background:#1b2f6b;border:5px solid var(--ink);cursor:pointer;padding:0;overflow:hidden}
+.exit::before{content:"";position:absolute;left:50%;top:0;bottom:0;border-left:4px solid var(--ink)}
+.exit::after{content:"";position:absolute;inset:auto 0 0 0;height:34%;background:#24386f;border-top:3px solid var(--ink)}
+.exit:hover,.exit:focus-visible{background:#27459a}
+.label{font-family:var(--osd);font-weight:400;text-transform:uppercase;text-align:center;border:3px solid var(--ink);white-space:nowrap;line-height:1.25}
+.mat{background:var(--red);color:var(--cream);font-family:var(--disp);font-weight:400;font-size:20px;text-align:center;line-height:34px;border:4px solid var(--ink);transform:skewX(-18deg)}
+.poster{background:var(--yel);font-family:var(--disp);font-weight:400;font-size:22px;line-height:1.05;text-align:center;padding:16px 6px;transform:rotate(-3deg);box-shadow:5px 5px 0 var(--ink)}
 
-/* the lemari */
-.lemari{--th:clamp(150px,36vw,250px);background:var(--blue);border:4px solid var(--ink);padding:14px 14px 0;box-shadow:8px 8px 0 var(--ink)}
-.row{display:flex;justify-content:center;align-items:flex-end;gap:3px;height:calc(var(--th) + 34px);padding-top:16px;overflow-x:clip;overflow-y:visible;
-  background:repeating-linear-gradient(105deg,rgba(27,26,23,.55) 0 1.5px,transparent 1.5px 8px) 0 0/100% 26px no-repeat,#2a5a94;
-  border:3px solid var(--ink);border-bottom:0}
-.board{height:18px;background:var(--blue);border:3px solid var(--ink);margin:0 -4px 14px;position:relative;z-index:2}
+.lemari{background:var(--blue);border:5px solid var(--ink);box-shadow:10px 0 0 rgba(27,26,23,.25)}
+.row{position:absolute;left:10px;right:10px;height:222px;display:flex;align-items:flex-end;gap:3px;padding-top:14px;overflow-x:clip;overflow-y:visible;
+  background:repeating-linear-gradient(105deg,rgba(27,26,23,.55) 0 1.5px,transparent 1.5px 8px) 0 0/100% 24px no-repeat,#2a5a94;border:4px solid var(--ink);border-bottom:0}
+.board{position:absolute;left:4px;right:4px;height:18px;background:var(--blue);border:4px solid var(--ink);z-index:2}
 .spine{flex:0 0 auto;display:block;border:2.5px solid var(--ink);border-bottom:0;position:relative}
 .spine::after{content:"";position:absolute;left:2px;right:2px;top:12%;height:22%;background:var(--cream);border:1.5px solid var(--ink)}
-.tape{flex:0 0 auto;height:var(--th);aspect-ratio:3/5;margin:0 10px;padding:0;border:0;background:none;cursor:pointer;position:relative;z-index:3;transition:transform .18s}
-.tape canvas{display:block;width:100%;height:100%;border:3px solid var(--ink);box-shadow:5px 0 0 var(--ink)}
-.tape .tag{position:absolute;left:50%;bottom:-2px;transform:translate(-50%,50%);z-index:3;white-space:nowrap;font-family:var(--osd);font-weight:400;font-size:1.05rem;text-transform:uppercase;background:var(--yel);border:2.5px solid var(--ink);padding:0 8px}
-.tape:hover,.tape:focus-visible{transform:translateY(-8px);outline:none}
+.tape{flex:0 0 auto;width:120px;height:200px;margin:0 14px;padding:0;border:0;background:none;cursor:pointer;position:relative;z-index:3}
+.tape canvas{display:block;width:100%;height:100%;border:3px solid var(--ink);box-shadow:5px 0 0 var(--ink);animation:bob 2.6s ease-in-out infinite alternate;animation-delay:calc(var(--i) * -.37s)}
+.tape .tag{position:absolute;left:50%;bottom:-3px;transform:translate(-50%,50%);z-index:3;white-space:nowrap;font-family:var(--osd);font-weight:400;font-size:17px;text-transform:uppercase;background:var(--yel);border:2.5px solid var(--ink);padding:0 8px}
+.arrive .tape{animation:drop .6s cubic-bezier(.3,1.5,.5,1) backwards;animation-delay:calc(.45s + var(--i) * .09s)}
+.tape:hover canvas,.tape:focus-visible canvas{animation:wig .5s ease-in-out infinite}
+.tape:hover,.tape:focus-visible{outline:none;z-index:4}
 .tape:hover .tag,.tape:focus-visible .tag{background:var(--cream)}
+.tape.gone canvas{visibility:hidden}
+@keyframes bob{to{transform:translateY(-5px)}}
+@keyframes wig{0%,100%{transform:translateY(-12px) rotate(-3deg)}50%{transform:translateY(-12px) rotate(3deg)}}
+@keyframes drop{from{transform:translateY(-260px) rotate(-14deg);opacity:0}}
 
-/* ---------- counter ---------- */
-#counter{display:flex;flex-wrap:wrap;align-items:flex-end;gap:28px;padding-bottom:70px}
-#tv{width:min(300px,70vw);height:auto}
-#counter .caption{margin:0;background:var(--yel);flex:1 1 300px}
-.line{font-size:1.15rem;overflow-wrap:anywhere;margin:0!important}
-footer{text-align:center;padding:34px 20px 60px;border-top:5px solid var(--ink);background:
-  linear-gradient(var(--ink),var(--ink)) 0 0/100% 0 no-repeat,
-  repeating-linear-gradient(90deg,transparent 0 78px,var(--ink) 78px 80px),repeating-linear-gradient(0deg,transparent 0 78px,var(--ink) 78px 80px),var(--sand)}
-footer p{margin:.2em 0}
-footer p:first-child{font-family:var(--disp);font-weight:400;font-size:1.6rem;text-transform:uppercase}
-footer p{background:var(--sand);display:inline-block;padding:0 10px}
+.counter{background:var(--orange);font-family:var(--disp);font-weight:400;font-size:44px;text-align:center;line-height:160px;white-space:nowrap}
+.slab{background:var(--cream)}
+.reg{background:var(--red)}.reg::after{content:"";position:absolute;left:20px;right:20px;top:-26px;height:26px;background:var(--cream);border:4px solid var(--ink)}
+.notice{background:var(--yel);padding:14px 16px;box-shadow:5px 5px 0 var(--ink);transform:rotate(1.5deg);font-size:15px;line-height:1.35}
+.notice h2{font-family:var(--disp);font-weight:400;font-size:25px;line-height:1;margin:6px 0;text-transform:uppercase}
+.notice p{margin:0 0 5px}.notice .line{font-size:17px;overflow-wrap:anywhere}
+.notice::before{content:"";position:absolute;left:50%;top:-10px;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:var(--red);border:3px solid var(--ink)}
+.chip{display:inline-block;font-family:var(--osd);font-weight:400;font-size:19px;text-transform:uppercase;letter-spacing:.08em;background:var(--red);color:var(--cream);padding:0 10px;border:3px solid var(--ink);transform:rotate(-2deg)}
+.balloon{width:54px;height:66px;border-radius:50%;border:4px solid var(--ink);animation:float 3s ease-in-out infinite alternate}
+.balloon::after{content:"";position:absolute;left:50%;top:100%;height:150px;border-left:2.5px solid var(--ink)}
+@keyframes float{to{transform:translateY(-14px) rotate(4deg)}}
+
+/* floor robot */
+.bot{width:86px;height:40px;animation:patrol 30s linear infinite}
+.bot i{position:absolute;inset:8px 0 0 0;background:var(--green);border:4px solid var(--ink);border-radius:18px 18px 8px 8px}
+.bot i::before{content:"";position:absolute;right:12px;top:6px;width:11px;height:11px;border-radius:50%;background:var(--cream);border:3px solid var(--ink);box-shadow:-20px 0 0 -3px var(--ink),-20px 0 0 0 var(--cream)}
+.bot::before{content:"";position:absolute;left:22px;top:-16px;height:24px;border-left:3px solid var(--ink)}
+.bot::after{content:"";position:absolute;left:16px;top:-26px;width:14px;height:14px;border-radius:50%;background:var(--red);border:3px solid var(--ink);animation:blink 1s steps(1) infinite}
+@keyframes patrol{0%{transform:translateX(0) scaleX(1)}49%{transform:translateX(2000px) scaleX(1)}50%{transform:translateX(2000px) scaleX(-1)}99%{transform:translateX(0) scaleX(-1)}100%{transform:translateX(0) scaleX(1)}}
+@keyframes blink{50%{background:var(--yel)}}
+
+/* overhead: lights, fans, swinging signs */
+.light{background:#fff;border:4px solid var(--ink);animation:hum 5s steps(1) infinite}
+@keyframes hum{0%,100%{background:#fff}93%{background:#f4e7b0}95%{background:#fff}97%{background:#f4e7b0}}
+.fan{width:8px;height:44px;background:var(--ink)}
+.fan b{position:absolute;left:-116px;top:26px;width:240px;height:240px;transform:scaleY(.2);transform-origin:50% 0}
+.fan b i{position:absolute;inset:0;animation:spin 1.5s linear infinite}
+.fan b i::before,.fan b i::after{content:"";position:absolute;left:0;right:0;top:50%;height:44px;margin-top:-22px;background:var(--orange);border:5px solid var(--ink);border-radius:22px}
+.fan b i::after{transform:rotate(90deg)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hang{transform-origin:50% 0;animation:sway 3.4s ease-in-out infinite alternate;animation-delay:calc(var(--i) * -.9s);width:190px;height:96px}
+.hang::before,.hang::after{content:"";position:absolute;top:0;height:42px;border-left:3px solid var(--ink)}
+.hang::before{left:24px}.hang::after{right:24px}
+.hang span{position:absolute;left:0;right:0;top:40px;font-size:26px;background:var(--c,var(--yel));color:var(--k,var(--ink))}
+@keyframes sway{from{transform:rotate(-3.5deg)}to{transform:rotate(3.5deg)}}
+
+/* things near the camera */
+.crate{background:var(--red);border:5px solid var(--ink);font-family:var(--osd);font-weight:400;font-size:26px;color:var(--cream);text-align:center;line-height:96px;text-transform:uppercase}
+.crate::before{content:"";position:absolute;left:14px;right:14px;top:-44px;height:44px;border:4px solid var(--ink);border-bottom:0;background:repeating-linear-gradient(90deg,var(--yel) 0 16px,var(--ink) 16px 19px,var(--sky) 19px 37px,var(--ink) 37px 40px,var(--cream) 40px 54px,var(--ink) 54px 57px,var(--green) 57px 76px,var(--ink) 76px 79px)}
+.pot{background:var(--orange);border:5px solid var(--ink);border-radius:0 0 18px 18px}
+.pot::before,.pot::after{content:"";position:absolute;bottom:100%;width:54px;height:150px;background:var(--green);border:5px solid var(--ink);border-radius:50% 50% 0 0;transform-origin:50% 100%;animation:leaf 4s ease-in-out infinite alternate}
+.pot::before{left:8px;transform:rotate(-16deg)}.pot::after{right:8px;height:120px;animation-delay:-2s}
+@keyframes leaf{to{transform:rotate(12deg)}}
+
+/* heads-up bits */
+.caption{background:#fbeeb4;border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink)}
+#tip{position:absolute;left:50%;top:10px;transform:translateX(-50%);margin:0;padding:4px 14px;font-size:.95rem;white-space:nowrap;max-width:94vw;overflow:hidden;text-overflow:ellipsis;transition:opacity .5s;z-index:6}
+#tip.off{opacity:0}
+.nav{position:absolute;top:50%;margin-top:-30px;width:52px;height:60px;font-size:1.5rem;background:var(--yel);border:4px solid var(--ink);box-shadow:4px 4px 0 var(--ink);cursor:pointer;z-index:6}
+.nav:hover,.nav:focus-visible{background:var(--cream)}
+.nav:disabled{opacity:.35;cursor:default}
+#prev{left:10px}#next{right:10px}
+#dots{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);display:flex;gap:8px;z-index:6;background:var(--ink);padding:6px 10px;border-radius:20px}
+#dots button{width:14px;height:14px;padding:0;border:0;border-radius:50%;background:var(--cream);cursor:pointer}
+#dots button.on{background:var(--yel);transform:scale(1.4)}
+
+/* the tape flying off the shelf */
+.fly{position:fixed;z-index:40;margin:0;border:3px solid var(--ink);box-shadow:8px 8px 0 var(--ink);pointer-events:none;will-change:transform}
 
 /* ---------- the opened box ---------- */
 dialog{background:var(--bg,var(--cream));color:var(--fg,var(--ink));border:4px solid var(--ink);box-shadow:10px 10px 0 var(--ink);padding:20px 22px 26px;width:min(900px,94vw);max-height:92vh}
+dialog[open]{animation:pop .3s cubic-bezier(.3,1.4,.5,1)}
+@keyframes pop{from{transform:scale(.9);opacity:0}}
 dialog::backdrop{background:rgba(27,26,23,.82)}
 #close{float:right;font-family:var(--osd);font-size:1.3rem;text-transform:uppercase;background:var(--ink);color:var(--cream);border:0;padding:3px 12px;cursor:pointer}
 .box-in{clear:both;display:grid;grid-template-columns:minmax(150px,240px) 1fr;gap:26px;padding-top:12px;align-items:start}
 .box-art canvas{display:block;width:100%;height:auto;border:3px solid var(--ink)}
+#box-cover{position:relative;z-index:1}
 #cassette{margin-top:14px;border:0}
+dialog[open] #cassette{animation:slide .7s .25s cubic-bezier(.2,1.2,.4,1) backwards}
+@keyframes slide{from{transform:translateY(-120%) rotate(-8deg);opacity:0}}
 .p-genre{font-family:var(--osd);font-weight:400;font-size:1.35rem;text-transform:uppercase;letter-spacing:.1em;margin:0;color:var(--acc)}
 dialog h2{font-family:var(--disp);font-weight:400;font-size:clamp(1.8rem,5vw,3.2rem);line-height:.95;margin:.1em 0 .25em;text-transform:uppercase;text-shadow:4px 4px 0 var(--acc)}
 .p-tag{font-family:var(--tall);font-weight:400;font-size:1.45rem;line-height:1.2;text-transform:uppercase;margin:0 0 .6em}
@@ -88,12 +168,11 @@ dialog h3{font-family:var(--osd);font-size:1.4rem;font-weight:400;text-transform
   .box-in{grid-template-columns:1fr}
   .box-art{display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:end}
   #cassette{margin:0}
-  .lemari{--th:136px}
-  .tape{margin:0 5px}
-  .tape .tag{font-size:.85rem;padding:0 4px}
-  .spine{display:none}
-  .tape + .spine{display:block}
-  .row{padding-left:4px;padding-right:4px}
-  .lemari{padding:8px 8px 0}
+  #tip{white-space:normal;text-align:center;width:88vw;font-size:.85rem}
+  .nav{top:auto;bottom:8px;margin:0;width:44px;height:44px;font-size:1.1rem}
+  .osd-bl{display:none}
 }
-@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.tape{transition:none}}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important}
+  #zoomer.go{transition:none;transform:none}
+}

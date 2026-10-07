@@ -4,52 +4,45 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Efraim Toti — Toti Video</title>
-<meta name="description" content="Efraim Toti — directing, writing, editing, producing, photography and videography. Step into the video store and pull a tape off the shelf.">
+<meta name="description" content="Efraim Toti — directing, writing, editing, producing, photography and videography. Click the door, walk into the video store and pull a tape off the shelf.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bowlby+One&family=Comic+Neue:wght@700&family=Space+Mono&family=VT323&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body data-place="outside">
 
 <div class="scan" aria-hidden="true"></div>
 <div class="osd osd-tl" aria-hidden="true">PLAY &#9654;</div>
 <div class="osd osd-bl" aria-hidden="true"><span id="clock"></span></div>
+<div id="veil" aria-hidden="true"></div>
 
-<header class="hero" id="top">
-  <canvas id="scene" role="img" aria-label="Drawing of a video rental store at night, its windows lit, mesas on the horizon"></canvas>
+<!-- outside -->
+<header id="outside" class="place">
+  <div id="zoomer">
+    <canvas id="scene" role="img" aria-label="Drawing of a video rental store at night, its windows lit, mesas on the horizon"></canvas>
+    <button id="door" type="button" aria-label="Open the door and walk into the store"><span class="ring"></span><span class="hint">Click the door</span></button>
+  </div>
   <div class="hero-text">
     <p class="kicker">Open late &middot; every night</p>
     <h1 id="h-name"></h1>
     <p class="roles" id="h-roles"></p>
-    <a class="btn" href="#store">Walk in &#9660;</a>
+    <button class="btn" id="walk" type="button">Walk in &#9654;</button>
   </div>
 </header>
 
-<main>
-  <section id="store">
-    <div class="caption">
-      <span class="chip">Inside</span>
-      <h2>Pick a tape</h2>
-      <p>Seven tapes, face-out on the shelves. Every one is his work, dressed up as a different kind of movie. Click one to open the box.</p>
-    </div>
-    <div id="lemari" class="lemari"></div>
-  </section>
-
-  <section id="counter">
-    <canvas id="tv" width="360" height="300" role="img" aria-label="Drawing of a small television showing a test card"></canvas>
-    <div class="caption card">
-      <span class="chip">Front counter</span>
-      <h2>Rent the director</h2>
-      <p id="c-roles"></p>
-      <p class="line"><a id="c-mail"></a></p>
-      <p class="line"><a id="c-tel"></a></p>
-      <p class="small">No late fees. Be kind, rewind.</p>
-    </div>
-  </section>
+<!-- inside -->
+<main id="inside" class="place" aria-label="Inside the store">
+  <div id="stage">
+    <div class="layer" id="L-main"></div>
+    <div class="layer" id="L-ceil" aria-hidden="true"></div>
+    <div class="layer" id="L-fg" aria-hidden="true"></div>
+  </div>
+  <p id="tip" class="caption">Drag, scroll or use the arrows to browse &middot; click a tape to take it off the shelf</p>
+  <button class="nav" id="prev" type="button" aria-label="Browse left">&#9664;</button>
+  <button class="nav" id="next" type="button" aria-label="Browse right">&#9654;</button>
+  <nav id="dots" aria-label="Jump to"></nav>
 </main>
-
-<footer><p>Be kind, rewind.</p><p class="small">&copy; <span id="yr"></span> Efraim Toti &middot; every drawing on this site is made by code.</p></footer>
 
 <dialog id="box" aria-labelledby="box-title">
   <button id="close" type="button">&#9167; Eject</button>
