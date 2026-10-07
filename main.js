@@ -164,7 +164,13 @@ const stations = [];   // places the arrows and dots stop at
   const tv = put(Lmain, "canvas", "", 2990, 286, 200, 167); tv.id = "tv"; tv.width = 360; tv.height = 300;
   if (D.owner.tv) {   // the TV is a button: click it and the video plays on a big set
     const b = put(Lmain, "button", "tvbtn", 2990, 286, 200, 167); b.type = "button"; b.setAttribute("aria-label", "Watch the video on Efraim TV"); b.onclick = () => { if (!dragged) openTV(); };
-    b.append(el("span", "hint", "Click the TV"));
+    // a light-bulb marquee with an arrow, pointing down at the set
+    const mq = el("span", "marquee"); mq.append(el("small", "", "Now showing"), el("strong", "", D.owner.tvLabel || "Press play"));
+    const W = 250, H = 92, pts = [];
+    for (let x = 14; x <= W - 14; x += (W - 28) / 11) pts.push([x, 7], [x, H - 7]);
+    for (let y = 7 + (H - 14) / 3; y < H - 10; y += (H - 14) / 3) pts.push([7, y], [W - 7, y]);
+    pts.forEach(([x, y], i) => { const d = el("i", "bulb"); d.style.left = x + "px"; d.style.top = y + "px"; d.style.animationDelay = -(Math.round(x / 21 + y / 30) % 3) * .3 + "s"; mq.append(d); });
+    b.append(mq, el("span", "arrow"));
   }
   put(Lmain, "div", "reg inkbox", 3470, 398, 120, 56);
   const note = put(Lmain, "div", "notice inkbox", 3230, 140, 330, null);

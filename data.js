@@ -17,6 +17,7 @@ window.DATA = {
     phone: "+62 812 1136 8646",
     tel: "+6281211368646",
     /* the video that plays on the counter TV — a Google Drive or YouTube link */
+    tvLabel: "Melly: the trailer",   // the words on the light-bulb sign above the TV
     tv: "https://drive.google.com/file/d/1Z7B2I29eLfbIvg7xPiFORPBBFPgCaNG6/view?usp=sharing"
   },
 
