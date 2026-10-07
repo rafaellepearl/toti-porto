@@ -1,8 +1,9 @@
+(() => {
 /* Cover paintings for the tapes — plain 2D canvas, later wrapped onto the 3D boxes.
    Each one is an original picture in the manner of a film genre. */
-export const INK = "#1b1a17", CREAM = "#f6ecd2", RED = "#e2452f", YEL = "#f4c542", BLUE = "#3d7dc4", GREEN = "#5fae7b", ORANGE = "#f08a4b", SKY = "#9ad4ea";
+const INK = "#1b1a17", CREAM = "#f6ecd2", RED = "#e2452f", YEL = "#f4c542", BLUE = "#3d7dc4", GREEN = "#5fae7b", ORANGE = "#f08a4b", SKY = "#9ad4ea";
 const DISP = '"Bowlby One", Impact, sans-serif', TALL = 'Anton, Impact, sans-serif', MONO = '"Space Mono", monospace', OSD = 'VT323, monospace';
-export const W = 512, H = 854;
+const W = 512, H = 854;
 
 const rng = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 const P = (g, pts, fill, stroke = INK, lw = 5) => { g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.closePath(); if (fill) { g.fillStyle = fill; g.fill(); } if (stroke) { g.strokeStyle = stroke; g.lineWidth = lw; g.lineJoin = "round"; g.stroke(); } };
@@ -134,7 +135,7 @@ const ART = {
   }
 };
 
-export function paintCover(cv, tape) {
+function paintCover(cv, tape) {
   cv.width = W; cv.height = H; const g = cv.getContext("2d");
   (ART[tape.art] || ART.arthouse)(g, tape.title);
   // box furniture shared by every tape
@@ -149,8 +150,11 @@ export function paintCover(cv, tape) {
 }
 
 /* small sign / label painter used around the store */
-export function paintSign(cv, text, bg, fg, w = 512, h = 144, font = DISP) {
+function paintSign(cv, text, bg, fg, w = 512, h = 144, font = DISP) {
   cv.width = w; cv.height = h; const g = cv.getContext("2d");
   R(g, 0, 0, w, h, bg, INK, 12); T(g, text, w / 2, h / 2 + 4, h * .56, font, fg, { max: w - 50 });
   return cv;
 }
+
+window.COVERS = { paintCover, paintSign, INK, CREAM, RED, YEL, BLUE, GREEN, ORANGE, SKY };
+})();

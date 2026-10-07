@@ -1,5 +1,6 @@
 /* TOTI VIDEO — a drawn video store. Click the door, walk in, slide along the shelves, pull a tape. */
-import { paintCover, INK, CREAM, RED, YEL, BLUE, GREEN, ORANGE, SKY } from "./covers.js";
+(async () => {
+const { paintCover, INK, CREAM, RED, YEL, BLUE, GREEN, ORANGE, SKY } = window.COVERS;
 
 const D = window.DATA, $ = s => document.querySelector(s);
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -282,3 +283,4 @@ function showBox(d) {
 dlg.addEventListener("close", () => { clearInterval(spin); body.replaceChildren(); });
 $("#close").onclick = () => dlg.close();
 dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
+})().catch(e => console.error(e));
