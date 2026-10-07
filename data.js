@@ -21,7 +21,7 @@ window.DATA = {
   tapes: [
     {
       id: "short-film", name: "Short Film", title: ["SHORT", "FILM"], art: "adventure", genre: "Adventure",
-      colors: { bg: "#ff7a1a", fg: "#141210", acc: "#ffc21a" },
+      colors: { bg: "#f08a4b", fg: "#1b1a17", acc: "#f4c542" },
       tagline: "Two expeditions into the lost temples of memory.",
       blurb: "Somewhere past the last marked reel on the map, one filmmaker went digging for the things most people leave buried. No whip, no hat — just a camera, an edit suite, and a bad habit of opening doors marked DO NOT OPEN. He came back with two short films.",
       works: [
@@ -39,7 +39,7 @@ window.DATA = {
     },
     {
       id: "video-essay", name: "Video Essay", title: ["VIDEO", "ESSAY"], art: "grindhouse", genre: "Grindhouse",
-      colors: { bg: "#ffc21a", fg: "#141210", acc: "#e63323" },
+      colors: { bg: "#f4c542", fg: "#1b1a17", acc: "#e2452f" },
       tagline: "They said it could never be shown again!",
       blurb: "SEE the rise! SHUDDER at the fall! One man walks alone into the darkest back room of the video store and comes out with the whole lurid history. Not for the faint of heart. No one admitted during the last ten minutes.",
       works: [
@@ -52,33 +52,33 @@ window.DATA = {
     },
     {
       id: "journalistic-video", name: "Journalistic Video", title: ["JOURNALISTIC", "VIDEO"], art: "noir", genre: "Film Noir",
-      colors: { bg: "#141210", fg: "#fff4d6", acc: "#ffc21a" },
+      colors: { bg: "#1b1a17", fg: "#f6ecd2", acc: "#f4c542" },
       tagline: "The city never talks. He makes it.",
       blurb: "The story walked in at midnight, wanting to stay hidden. They always do. So he worked the case the long way round: deep-dive investigative research, on-camera interviews that land, a producing workflow with more moving parts than a getaway, and cinematic videography cut for digital platforms. One video journalist. Start to finish.",
       works: [
-        {
-          title: "MyCity", year: "2023", role: "Video Journalist",
-          text: "Full-lifecycle video journalism — researched, interviewed, produced and shot for digital.",
-          link: ""
-        }
+        /* MyCity (2023) — paste each episode's YouTube link into link: "" and it plays right inside the panel */
+        { title: "Warga Rawajati Menanti Hak Ganti Rugi", year: "MyCity, 2023", role: "Video Journalist", text: "Case file one: the residents of Rawajati, still waiting on their compensation.", link: "" },
+        { title: "TMII Revitalisasi, Harga Tiket Naik?", year: "MyCity, 2023", role: "Video Journalist", text: "Case file two: a landmark gets a facelift. Who pays at the gate?", link: "" },
+        { title: "Sisi Lain Pemakaman di TPU Pondok Ranggon", year: "MyCity, 2023", role: "Video Journalist", text: "Case file three: the other side of the Pondok Ranggon cemetery.", link: "" },
+        { title: "Perbedaan Makanan Organik dan Anorganik", year: "MyCity, 2023", role: "Video Journalist", text: "Case file four: organic versus non-organic food, examined.", link: "" }
       ]
     },
     {
       id: "content-specialist", name: "Content Specialist", title: ["CONTENT", "SPECIALIST"], art: "sports", genre: "Sports Drama",
-      colors: { bg: "#1fa35a", fg: "#fff4d6", acc: "#ffc21a" },
+      colors: { bg: "#5fae7b", fg: "#f6ecd2", acc: "#f4c542" },
       tagline: "The archive was benched for years. One channel put it back in the game.",
       blurb: "Nobody had seen these matches since the night they aired. Classic Indonesian football, 1994 to 2015, sitting on the bench gathering dust. Then a rookie at ANTV got handed his first project, and the comeback was on.",
       works: [
         {
           title: "Lensor Match", year: "2024–2025", role: "Content Specialist, ANTV",
           text: "The first official release of the archive since it aired. Managed the channel, cut long-form and short-form videos, designed clickable YouTube thumbnails, and wrote targeted SEO copy to bring Indonesian sports history back into play.",
-          link: ""
+          link: "https://www.youtube.com/channel/UCbmn7BEQiNXFHarQniBi_aQ", linkLabel: "▶ Visit the channel"
         }
       ]
     },
     {
       id: "livestream", name: "Livestream", title: ["LIVE", "STREAM"], art: "space", genre: "Sci-Fi",
-      colors: { bg: "#1f4fd8", fg: "#fff4d6", acc: "#ffc21a" },
+      colors: { bg: "#3d7dc4", fg: "#f6ecd2", acc: "#f4c542" },
       tagline: "Live. Across the nation. No second take.",
       blurb: "Mission control has one rule: when the red light comes on, there is no going back. Six transmissions, beamed out in real time for ANTV. All systems go.",
       works: [
@@ -92,7 +92,7 @@ window.DATA = {
     },
     {
       id: "producing-work", name: "Producing Work", title: ["PRODUCING", "WORK"], art: "heist", genre: "Heist",
-      colors: { bg: "#e63323", fg: "#fff4d6", acc: "#ffc21a" },
+      colors: { bg: "#e2452f", fg: "#f6ecd2", acc: "#f4c542" },
       tagline: "Three clients. Three jobs. One producer who gets everybody out on time.",
       blurb: "Every job needs someone who knows the plan, the crew, the budget and the exits. He's the one with the clipboard. In and out, on schedule, nobody gets hurt, the client gets the film.",
       works: [
@@ -103,13 +103,17 @@ window.DATA = {
     },
     {
       id: "photography", name: "Photography", title: ["photo", "graphy"], art: "arthouse", genre: "Art House",
-      colors: { bg: "#fff4d6", fg: "#141210", acc: "#e63323" },
+      colors: { bg: "#f6ecd2", fg: "#1b1a17", acc: "#e2452f" },
       tagline: "Un film fixe. A film that does not move.",
       blurb: "Nothing happens. Everything is seen. A man with a camera waits for the light, and the light, eventually, agrees. Presented in stillness, with long silences.",
       works: [],
       empty: "Prints are still in the darkroom — back on this shelf soon.",
-      /* add photos: put files in a /photos folder and list them, e.g. { src: "photos/01.jpg", caption: "Jakarta, 2024" } */
-      photos: []
+      /* These six files are small previews taken from the old deck. Replace each file in /photos with the
+         full-size original (keep the same file name), or add more lines here. caption is optional. */
+      photos: [
+        { src: "photos/photo-01.jpg", caption: "" }, { src: "photos/photo-02.jpg", caption: "" }, { src: "photos/photo-03.jpg", caption: "" },
+        { src: "photos/photo-04.jpg", caption: "" }, { src: "photos/photo-05.jpg", caption: "" }, { src: "photos/photo-06.jpg", caption: "" }
+      ]
     }
   ]
 };

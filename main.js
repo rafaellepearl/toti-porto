@@ -22,12 +22,13 @@ async function start() {
   const renderer = new THREE.WebGLRenderer({ canvas: $("#gl"), antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color("#0c1440");
+  scene.background = new THREE.Color("#1b2f6b");
   const camera = new THREE.PerspectiveCamera(55, 1, 0.05, 140);
 
   // ---------- materials & builders ----------
   // No lights: every box gets six fixed shades of its colour, plus an ink outline. Flat, like a comic panel.
-  const SHADE = [.86, .86, 1.05, .68, 1, .92], cache = {};
+  const SHADE = [.93, .93, 1, .84, 1, .96], cache = {};   // ligne claire: nearly flat
+  const hullMat = new THREE.MeshBasicMaterial({ color: INK, side: THREE.BackSide });
   const flat = c => cache[c] || (cache[c] = new THREE.MeshBasicMaterial({ color: c }));
   const shaded = c => cache["s" + c] || (cache["s" + c] = SHADE.map(k => new THREE.MeshBasicMaterial({ color: new THREE.Color(c).multiplyScalar(k) })));
   const inkLine = new THREE.LineBasicMaterial({ color: INK });
@@ -37,14 +38,22 @@ async function start() {
   function box(w, h, d, c, x, y, z, o = {}) {
     const geo = new THREE.BoxGeometry(w, h, d), m = new THREE.Mesh(geo, o.mat || shaded(c));
     m.position.set(x, y, z); (o.parent || scene).add(m);
-    if (o.edges !== false) m.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), inkLine));
+    if (o.edges !== false) {
+      m.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), inkLine));
+      // a slightly larger inside-out copy in ink gives every object one even, bold outline
+      if (o.hull !== false && Math.max(w, h, d) < 7) { const k = new THREE.Mesh(geo, hullMat); k.scale.set(1 + .03 / w, 1 + .03 / h, 1 + .03 / d); m.add(k); }
+    }
     return m;
   }
   const ball = (r, c, x, y, z, parent = scene) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 18, 12), flat(c)); m.position.set(x, y, z); parent.add(m); return m; };
   let seed = 11; const rnd = () => { seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 
   // ---------- outside, at night ----------
-  box(90, .1, 50, "#161d3a", 0, -.05, 22, { edges: false });
+  box(140, .1, 90, "#2b4384", 0, -.05, 0, { edges: false });
+  // mesas on the horizon
+  [[-34, 15, 10], [-17, 9, 8], [10, 12, 9], [26, 18, 11], [44, 10, 9]].forEach(([x, h, w], k) => {
+    const c = k % 2 ? "#d9703a" : "#e9a06a"; box(w, h, 6, c, x, h / 2, -46); box(w * .55, h * .22, 5, c, x + w * .12, h * 1.11, -46);
+  });
   for (let i = -3; i <= 3; i++) box(.14, .02, 5, YEL, i * 2.7, .01, 6.5, { edges: false });
   {
     const n = 320, a = new Float32Array(n * 3);
@@ -64,7 +73,7 @@ async function start() {
   }
   {
     const cv = mk(); cv.width = 512; cv.height = 256; const g = cv.getContext("2d"), cols = [RED, YEL, BLUE, GREEN, ORANGE, CREAM, INK, SKY];
-    g.fillStyle = "#ffe9a0"; g.fillRect(0, 0, 512, 256);
+    g.fillStyle = "#fbeeb4"; g.fillRect(0, 0, 512, 256);
     for (let r = 0; r < 3; r++) { for (let i = 0; i < 34; i++) { g.fillStyle = cols[rnd() * 8 | 0]; g.fillRect(6 + i * 15, 12 + r * 82, 12, 62); } g.fillStyle = INK; g.fillRect(0, 76 + r * 82, 512, 8); }
     g.strokeStyle = INK; g.lineWidth = 12; g.strokeRect(0, 0, 512, 256); g.fillRect(250, 0, 12, 256);
     const t = tex(cv); for (const x of [-2.95, 2.95]) box(3.1, 1.55, .06, INK, x, 1.55, .15, { mat: withFaces(INK, t, [4]) });
@@ -72,38 +81,50 @@ async function start() {
   const signMat = mapped(tex(paintSign(mk(), "TOTI VIDEO", INK, YEL, 1024, 222)));
   { const m = shaded(INK).slice(); m[4] = signMat; box(6.2, 1.35, .3, INK, 0, 5.4, .2, { mat: m }); box(.12, .5, .12, INK, -2.4, 4.7, .2, { edges: false }); box(.12, .5, .12, INK, 2.4, 4.7, .2, { edges: false }); }
   const glass = new THREE.MeshBasicMaterial({ color: SKY, transparent: true, opacity: .45 });
-  const doorL = box(.9, 2.7, .06, SKY, -.45, 1.35, 0, { mat: glass }), doorR = box(.9, 2.7, .06, SKY, .45, 1.35, 0, { mat: glass });
+  const doorL = box(.9, 2.7, .06, SKY, -.45, 1.35, 0, { mat: glass, hull: false }), doorR = box(.9, 2.7, .06, SKY, .45, 1.35, 0, { mat: glass, hull: false });
 
   // ---------- inside ----------
   {
-    const cv = mk(); cv.width = cv.height = 64; const g = cv.getContext("2d");
-    g.fillStyle = CREAM; g.fillRect(0, 0, 64, 64); g.fillStyle = RED; g.fillRect(0, 0, 32, 32); g.fillRect(32, 32, 32, 32);
-    const t = tex(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(5, 8.5); t.magFilter = THREE.NearestFilter;
-    box(10, .1, 17, CREAM, 0, -.05, -8.5, { mat: withFaces(CREAM, t, [2]), edges: false });
+    // floor: flat sand tiles, each drawn with a thin ink line and a little hatching
+    const cv = mk(); cv.width = cv.height = 128; const g = cv.getContext("2d");
+    g.fillStyle = "#ecd9a6"; g.fillRect(0, 0, 128, 128); g.strokeStyle = INK; g.lineWidth = 3; g.strokeRect(0, 0, 128, 128);
+    g.lineWidth = 1.5; for (let i = 0; i < 4; i++) { g.beginPath(); g.moveTo(88 + i * 8, 118); g.lineTo(98 + i * 8, 100); g.stroke(); }
+    const t = tex(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(7, 12);
+    box(10, .1, 17, "#ecd9a6", 0, -.05, -8.5, { mat: withFaces("#ecd9a6", t, [2]), edges: false });
   }
   box(10, .1, 17, CREAM, 0, 4.25, -8.5, { edges: false });
-  for (const s of [-1, 1]) { box(.2, 4.2, 17, YEL, s * 5.1, 2.1, -8.5); box(.22, .3, 17, RED, s * 5.09, 3.85, -8.5, { edges: false }); }
-  box(10, 4.2, .2, SKY, 0, 2.1, -17.1);
+  {
+    // walls: one flat colour, a skirting line, and pen hatching where the ceiling throws shadow
+    const wallTex = (c, rx) => {
+      const cv = mk(); cv.width = cv.height = 256; const g = cv.getContext("2d");
+      g.fillStyle = c; g.fillRect(0, 0, 256, 256); g.strokeStyle = INK; g.lineWidth = 1.5;
+      for (let x = 0; x < 270; x += 8) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x - 10, 18 + (x * 7) % 16); g.stroke(); }
+      g.lineWidth = 4; g.beginPath(); g.moveTo(0, 238); g.lineTo(256, 238); g.stroke();
+      const t = tex(cv); t.wrapS = THREE.RepeatWrapping; t.repeat.set(rx, 1); return t;
+    };
+    const side = wallTex("#f3c9a8", 6);
+    for (const s of [-1, 1]) box(.2, 4.2, 17, "#f3c9a8", s * 5.1, 2.1, -8.5, { mat: withFaces("#f3c9a8", side, [0, 1]) });
+    box(10, 4.2, .2, SKY, 0, 2.1, -17.1, { mat: withFaces(SKY, wallTex(SKY, 4), [4]) });
+  }
   for (const z of [-2.5, -6, -9.5, -13]) for (const x of [-2.3, 2.3]) box(1.3, .06, 2.2, "#ffffff", x, 4.17, z, { mat: flat("#ffffff") });
 
-  // which tape lives where: alternating left / right down the aisle
-  const spot = i => ({ s: i % 2 ? 1 : -1, z: -3.2 - i * 1.75 });
+  // the seven tapes stand face-out on the wall behind the counter, so you can see them all without moving
+  const tapePos = i => i < 4 ? V(-1.65 + i * 1.1, 2.95, -16.6) : V(-1.1 + (i - 4) * 1.1, 1.85, -16.6);
   const ROWS = [.25, 1.3, 2.35];
 
-  // the lemari: two long shelving units, packed spine-out
+  // the lemari: two long shelving units down the sides, packed spine-out
   {
     const geo = new THREE.BoxGeometry(.5, .86, .12), grey = SHADE.map(k => new THREE.MeshBasicMaterial({ color: new THREE.Color(k, k, k) }));
     const im = new THREE.InstancedMesh(geo, grey, 700), o = new THREE.Object3D(), col = new THREE.Color();
-    const cols = [RED, YEL, BLUE, GREEN, ORANGE, CREAM, SKY, "#f0f0f0", "#2b2926", "#ff9fb0", "#8a4fd0"];
+    const cols = [RED, YEL, BLUE, GREEN, ORANGE, CREAM, SKY, "#e9b6a0", "#3a3835", "#c9dba0", "#f3c9a8"];
     let n = 0;
     for (const s of [-1, 1]) {
       const c = s < 0 ? BLUE : GREEN;
       box(.08, 3.6, 13.3, c, s * 4.95, 1.95, -8.5);
       for (const y of [...ROWS, 3.4]) box(.68, .07, 13.3, c, s * 4.62, y, -8.5);
       for (const z of [-1.85, -15.15]) box(.68, 3.6, .08, c, s * 4.62, 1.95, z);
-      ROWS.forEach((y, r) => {
+      ROWS.forEach(y => {
         for (let z = -2.02; z > -15.05; z -= .135) {
-          if (r === 1 && D.tapes.some((_, i) => spot(i).s === s && Math.abs(spot(i).z - z) < .5)) continue;
           if (rnd() < .05 || n >= 700) continue;
           o.position.set(s * 4.6, y + .035 + .43, z); o.rotation.set(rnd() < .07 ? (rnd() - .5) * .45 : 0, 0, 0); o.updateMatrix();
           im.setMatrixAt(n, o.matrix); im.setColorAt(n, col.set(cols[rnd() * cols.length | 0])); n++;
@@ -113,12 +134,17 @@ async function start() {
     im.count = n; im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true;
     scene.add(im);
   }
+  // the display unit on the back wall
+  box(4.7, 2.5, .08, BLUE, 0, 2.5, -16.96);
+  for (const y of [1.33, 2.43, 3.55]) box(4.7, .07, .5, BLUE, 0, y, -16.75);
+  for (const x of [-2.35, 2.35]) box(.08, 2.3, .5, BLUE, x, 2.44, -16.75);
+  box(2.6, .42, .06, YEL, 0, 3.86, -16.9, { mat: withFaces(YEL, tex(paintSign(mk(), "NOW RENTING", YEL, INK, 512, 84)), [4]) });
 
   // the seven tapes
   const insideTex = tex(paintSign(mk(), "BE KIND · REWIND", CREAM, RED, 512, 854));
-  const tapes = [], signs = [];
+  const tapes = [];
   D.tapes.forEach((d, i) => {
-    const { s, z } = spot(i), g = new THREE.Group();
+    const g = new THREE.Group();
     box(.54, .9, .1, INK, 0, 0, -.01, { parent: g });
     const pivot = new THREE.Group(); pivot.position.set(-.27, 0, .04); g.add(pivot);
     const lm = shaded(INK).slice(); lm[4] = mapped(tex(paintCover(mk(), d))); lm[5] = mapped(insideTex);
@@ -132,15 +158,9 @@ async function start() {
       box(.085, .058, .014, INK, 0, 0, 0, { parent: r, edges: false }); box(.014, .058, .085, INK, 0, 0, 0, { parent: r, edges: false });
       return r;
     });
-    g.position.set(s * 4.3, ROWS[1] + .035 + .45, z); g.rotation.y = -s * Math.PI / 2;
-    g.userData = { i, pivot, cas, reels, home: g.position.clone(), homeQ: g.quaternion.clone(), grow: 1 };
+    g.position.copy(tapePos(i));
+    g.userData = { i, pivot, cas, reels, home: g.position.clone(), homeQ: g.quaternion.clone(), pop: 0 };
     scene.add(g); tapes.push(g);
-    // a genre sign swinging above it
-    const hang = new THREE.Group(); hang.position.set(s * 4.1, 4.2, z); hang.rotation.y = -s * Math.PI / 2; scene.add(hang);
-    const st = tex(paintSign(mk(), d.genre.toUpperCase(), d.colors.bg, d.colors.fg));
-    box(1.5, .42, .05, INK, 0, -1.72, 0, { parent: hang, mat: withFaces(INK, st, [4, 5]) });
-    for (const x of [-.6, .6]) box(.016, 1.52, .016, INK, x, -.76, 0, { parent: hang, edges: false });
-    signs.push(hang);
   });
 
   // ceiling fans
@@ -152,13 +172,13 @@ async function start() {
   });
 
   // the counter at the back
-  box(5.6, 1.1, .9, ORANGE, 0, .55, -15.9); box(5.8, .08, 1.05, CREAM, 0, 1.14, -15.9);
-  box(1.3, 1.0, .9, INK, -1.6, 1.7, -15.9);
+  box(7.6, 1.1, .9, ORANGE, 0, .55, -15.9, { mat: withFaces(ORANGE, tex(paintSign(mk(), "BE KIND · REWIND", ORANGE, INK, 1024, 148)), [4]) });
+  box(7.8, .08, 1.05, CREAM, 0, 1.14, -15.9);
+  box(1.2, 1.0, .9, INK, -3.15, 1.68, -15.9);
   const tvCv = mk(); tvCv.width = 256; tvCv.height = 192; const tvG = tvCv.getContext("2d"), tvTex = tex(tvCv);
-  box(1.02, .76, .02, INK, -1.6, 1.73, -15.44, { mat: withFaces(INK, tvTex, [4]) });
-  box(.7, .34, .5, RED, 1.5, 1.35, -15.9); box(.5, .26, .08, CREAM, 1.5, 1.66, -15.8);
-  box(6.4, 1.0, .06, RED, 0, 3.3, -16.97, { mat: withFaces(RED, tex(paintSign(mk(), "BE KIND · REWIND", RED, CREAM, 1024, 160)), [4]) });
-  const balloons = [[2.5, RED], [2.85, YEL], [3.2, BLUE]].map(([x, c], k) => {
+  box(.94, .72, .02, INK, -3.15, 1.7, -15.44, { mat: withFaces(INK, tvTex, [4]) });
+  box(.7, .34, .5, RED, 3.0, 1.35, -15.9); box(.5, .26, .08, CREAM, 3.0, 1.66, -15.8);
+  const balloons = [[3.5, RED], [3.75, YEL], [4.0, BLUE]].map(([x, c], k) => {
     const b = new THREE.Group(); b.position.set(x, 2.5 + k * .22, -15.7); scene.add(b);
     const m = ball(.3, c, 0, 0, 0, b); m.scale.y = 1.2; box(.012, 1.4, .012, INK, 0, -1.05, 0, { parent: b, edges: false });
     return b;
@@ -181,11 +201,13 @@ async function start() {
   function layout() {
     const w = window.innerWidth, h = window.innerHeight, portrait = w / h < .85;
     renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = portrait ? 72 : 55; camera.updateProjectionMatrix();
+    // one walk in a straight line, then the camera stays put: every tape and the counter share the same view
+    const shelf = { p: V(0, 2.0, portrait ? -10.2 : -12.1), l: V(0, 2.3, -17) };
     stops = [
       { kind: "hero", id: "top", p: V(0, 1.7, portrait ? 15 : 10.5), l: V(0, 2.8, 0) },
-      { kind: "enter", id: "enter", p: V(0, 1.75, -.6), l: V(0, 1.7, -10) },
-      ...D.tapes.map((d, i) => { const { s, z } = spot(i), y = ROWS[1] + .5; return { kind: "tape", id: d.id, i, p: V(s * (portrait ? 1.5 : 2.05), y, z), l: V(s * 4.3, y + (portrait ? -.25 : 0), z) }; }),
-      { kind: "counter", id: "counter", p: V(0, 1.7, -12.6), l: V(0, 1.75, -17) }
+      { kind: "enter", id: "enter", p: V(0, 1.8, -.6), l: V(0, 2.1, -17) },
+      ...D.tapes.map((d, i) => ({ kind: "tape", id: d.id, i, p: shelf.p, l: shelf.l })),
+      { kind: "counter", id: "front-desk", p: shelf.p, l: shelf.l }
     ];
   }
   layout(); addEventListener("resize", layout);
@@ -212,7 +234,9 @@ async function start() {
       const ol = el("ol", "works");
       d.works.forEach(w => {
         const li = el("li"); li.append(el("b", "", w.title), el("span", "meta", [w.year, w.role].filter(Boolean).join(" · ")), el("p", "", w.text));
-        if (w.link) { const a = el("a", "btn", "▶ Watch"); a.href = w.link; a.target = "_blank"; a.rel = "noopener"; li.append(a); } else li.append(el("span", "out", "Tape checked out — ask at the counter"));
+        const yt = w.link && w.link.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([\w-]{11})/);
+        if (yt) { const f = el("iframe", "yt"); f.src = "https://www.youtube-nocookie.com/embed/" + yt[1]; f.title = w.title; f.loading = "lazy"; f.allow = "accelerometer; encrypted-media; picture-in-picture; fullscreen"; f.allowFullscreen = true; li.append(f); }
+        if (w.link) { const a = el("a", "btn", w.linkLabel || (yt ? "▶ Watch on YouTube" : "▶ Watch")); a.href = w.link; a.target = "_blank"; a.rel = "noopener"; li.append(a); } else li.append(el("span", "out", "Tape checked out — ask at the counter"));
         ol.append(li);
       });
       body.append(ol);
@@ -227,7 +251,7 @@ async function start() {
   // ---------- taking a tape off the shelf ----------
   let out = null;   // { tape, k: flight 0..1, lid: 0..1, dir: 1 opening | -1 closing }
   function openTape(i) {
-    if (out) return; out = { tape: tapes[i], k: 0, lid: 0, dir: 1 };
+    if (out) return; out = { tape: tapes[i], k: 0, lid: 0, dir: 1, from: tapes[i].position.clone(), fromQ: tapes[i].quaternion.clone() };
     fillPanel(D.tapes[i]); panel.hidden = false; panel.scrollTop = 0;
     requestAnimationFrame(() => { panel.classList.add("show"); document.body.classList.add("opened"); });
     document.documentElement.style.overflow = "hidden"; $("#close").focus({ preventScroll: true });
@@ -276,21 +300,18 @@ async function start() {
 
     // camera along the rail
     const p = clamp(window.scrollY / window.innerHeight, 0, stops.length - 1);
-    ps += (p - ps) * (reduce ? 1 : Math.min(1, dt * 4));
-    const n = Math.min(stops.length - 2, Math.floor(ps)), e = ease(ps - n), A = stops[n], B = stops[n + 1], mid = Math.sin(Math.PI * e);
+    ps += (p - ps) * (reduce ? 1 : Math.min(1, dt * 2.5));
+    const n = Math.min(stops.length - 2, Math.floor(ps)), e = ease(ps - n), A = stops[n], B = stops[n + 1];
     camera.position.lerpVectors(A.p, B.p, e); look.lerpVectors(A.l, B.l, e);
-    if (n >= 1) look.z -= 2.8 * mid;                                          // glance down the aisle while crossing it
-    if (!reduce) camera.position.y += Math.abs(Math.sin(ps * Math.PI * 5)) * .04 * mid;   // footsteps
     sx += (mx - sx) * .06; sy += (my - sy) * .06; par += ((out ? 0 : 1) - par) * .08;
-    camera.lookAt(look); camera.rotateY(-sx * .1 * par); camera.rotateX(-sy * .06 * par); camera.updateMatrixWorld();
+    camera.lookAt(look); camera.rotateY(-sx * .02 * par); camera.rotateX(-sy * .012 * par); camera.updateMatrixWorld();
     setActive(Math.abs(ps - Math.round(ps)) < .3 ? Math.round(ps) : -1);
 
     // doors, neon, fans, signs, balloons, robot, dust, TV
     const door = ease(clamp((ps - .2) / .45)); doorL.position.x = -.45 - .9 * door; doorR.position.x = .45 + .9 * door;
     signMat.color.setScalar(!reduce && (Math.sin(t * 9) > .95 || Math.sin(t * 1.3) > .985) ? .45 : 1);
     if (!reduce) {
-      fans.forEach((f, k) => f.rotation.y += dt * (3 + k));
-      signs.forEach((s, k) => s.rotation.z = Math.sin(t * 1.4 + k * 1.7) * .06);
+      fans.forEach(f => f.rotation.y += dt * 1.1);
       balloons.forEach((b, k) => { b.position.y = 2.5 + k * .22 + Math.sin(t * 1.2 + k) * .08; b.rotation.z = Math.sin(t * .9 + k * 2) * .08; });
       const rx = Math.sin(t * .31) * 1.1, rz = -8.5 + Math.sin(t * .17) * 5.5, dx = Math.cos(t * .31) * .31 * 1.1, dz = Math.cos(t * .17) * .17 * 5.5;
       bot.position.set(rx, 0, rz); bot.rotation.y = Math.atan2(dx, dz);
@@ -309,10 +330,9 @@ async function start() {
     const facing = stops[active] && stops[active].kind === "tape" ? stops[active].i : -1;
     tapes.forEach((g, i) => {
       const u = g.userData; if (out && out.tape === g) return;
-      const s = spot(i).s, on = i === facing || i === hover;
-      u.grow += ((i === hover ? 1.1 : 1) - u.grow) * .15; g.scale.setScalar(u.grow);
-      g.position.copy(u.home); g.rotation.set(0, -s * Math.PI / 2, 0);
-      if (on && !reduce) { g.position.y += Math.sin(t * 2.4) * .015 + .01; g.position.x -= s * .06; g.rotation.y += Math.sin(t * 1.7) * .16; g.rotation.z = Math.sin(t * 2.1) * .03; }
+      u.pop += ((i === facing ? 1 : i === hover ? .35 : 0) - u.pop) * .08;       // the chosen tape eases forward; nothing else moves
+      g.position.copy(u.home); g.position.z += .45 * u.pop; g.position.y += .04 * u.pop; g.scale.setScalar(1 + .16 * u.pop);
+      g.rotation.set(0, i === facing && !reduce ? Math.sin(t * .8) * .05 * u.pop : 0, 0);
     });
 
     // the tape in your hands
@@ -323,11 +343,11 @@ async function start() {
       if (reduce) { out.k = out.lid = out.dir > 0 ? 1 : 0; }
       const k = ease(out.k), lid = ease(out.lid);
       tgt.set(portrait ? 0 : -.5, portrait ? .62 : 0, portrait ? -1.75 : -1.35); camera.localToWorld(tgt);
-      eu.set(reduce ? 0 : Math.sin(t * 1.1) * .05, .3 * lid + (reduce ? 0 : Math.sin(t * .8) * .07), 0);
+      eu.set(0, .3 * lid + (reduce ? 0 : Math.sin(t * .6) * .025), 0);
       tq.copy(camera.quaternion).multiply(q2.setFromEuler(eu));
-      g.position.lerpVectors(u.home, tgt, k); g.position.y += Math.sin(Math.PI * k) * .25;
-      g.quaternion.slerpQuaternions(u.homeQ, tq, k).multiply(q2.setFromAxisAngle(UP, Math.PI * 2 * k));
-      g.scale.setScalar(1);
+      g.position.lerpVectors(out.from, tgt, k);
+      g.quaternion.slerpQuaternions(out.fromQ, tq, k);
+      g.scale.setScalar(1 + .16 * u.pop * (1 - k));
       u.pivot.rotation.y = -2.35 * lid;
       const c = ease(clamp((out.lid - .45) / .55)); u.cas.visible = out.lid > .3;
       u.cas.position.set(0, -.02 + .04 * c, .03 + .2 * c); u.cas.rotation.z = (1 - c) * .5; u.cas.scale.setScalar(.7 + .3 * c);

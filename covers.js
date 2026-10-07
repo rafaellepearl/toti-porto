@@ -1,6 +1,6 @@
 /* Cover paintings for the tapes — plain 2D canvas, later wrapped onto the 3D boxes.
    Each one is an original picture in the manner of a film genre. */
-export const INK = "#141210", CREAM = "#fff4d6", RED = "#e63323", YEL = "#ffc21a", BLUE = "#1f4fd8", GREEN = "#1fa35a", ORANGE = "#ff7a1a", SKY = "#58b8ef";
+export const INK = "#1b1a17", CREAM = "#f6ecd2", RED = "#e2452f", YEL = "#f4c542", BLUE = "#3d7dc4", GREEN = "#5fae7b", ORANGE = "#f08a4b", SKY = "#9ad4ea";
 const DISP = '"Bowlby One", Impact, sans-serif', TALL = 'Anton, Impact, sans-serif', MONO = '"Space Mono", monospace', OSD = 'VT323, monospace';
 export const W = 512, H = 854;
 
@@ -28,14 +28,14 @@ const person = (g, x, y, s, col = INK, o = {}) => {
 
 const ART = {
   adventure(g, t) {
-    R(g, 0, 0, W, H, ORANGE, null); rays(g, 256, 500, 28, 900, "#ffa02e");
+    R(g, 0, 0, W, H, ORANGE, null); rays(g, 256, 500, 28, 900, "#f5a05f");
     O(g, 256, 500, 150, YEL);
     // stepped temple
-    for (let i = 0; i < 5; i++) R(g, 256 - 210 + i * 36, 690 - (i + 1) * 46, 420 - i * 72, 46, i % 2 ? "#178a4a" : GREEN);
+    for (let i = 0; i < 5; i++) R(g, 256 - 210 + i * 36, 690 - (i + 1) * 46, 420 - i * 72, 46, i % 2 ? "#4a9667" : GREEN);
     R(g, 226, 414, 60, 46, YEL); R(g, 232, 644, 48, 46, INK, null); for (let i = 0; i < 5; i++) L(g, 256, 690 - i * 46, 256, 690 - (i + 1) * 46 + 46, INK, 3);
     // jungle
-    for (const [x, d] of [[0, 1], [W, -1]]) for (let i = 0; i < 5; i++) P(g, [[x, 560 + i * 40], [x + d * (170 - i * 14), 520 + i * 52], [x, 640 + i * 40]], i % 2 ? "#0f6b39" : "#178a4a");
-    R(g, 0, 690, W, 164, "#7a3d12", null); L(g, 0, 690, W, 690, INK, 5);
+    for (const [x, d] of [[0, 1], [W, -1]]) for (let i = 0; i < 5; i++) P(g, [[x, 560 + i * 40], [x + d * (170 - i * 14), 520 + i * 52], [x, 640 + i * 40]], i % 2 ? "#3a7d55" : "#4a9667");
+    R(g, 0, 690, W, 164, "#b5713f", null); L(g, 0, 690, W, 690, INK, 5);
     // the dotted route and the X
     g.setLineDash([16, 14]); g.beginPath(); g.moveTo(40, 830); g.bezierCurveTo(180, 700, 330, 860, 420, 740); g.strokeStyle = RED; g.lineWidth = 8; g.stroke(); g.setLineDash([]);
     L(g, 404, 716, 444, 756, RED, 10); L(g, 444, 716, 404, 756, RED, 10);
@@ -66,7 +66,7 @@ const ART = {
   noir(g, t) {
     const r = rng(4); R(g, 0, 0, W, H, INK, null);
     P(g, [[330, 250], [W + 80, H], [60, H]], BLUE, null);
-    for (let x = 0; x < W;) { const w = 40 + r() * 50, h = 150 + r() * 260; R(g, x, 640 - h, w, h, "#0d1f5c", INK, 3); for (let j = 0; j < h / 34 - 1; j++) for (let i = 0; i < w / 20 - 1; i++) if (r() < .3) R(g, x + 9 + i * 20, 652 - h + j * 34, 9, 16, YEL, null); x += w; }
+    for (let x = 0; x < W;) { const w = 40 + r() * 50, h = 150 + r() * 260; R(g, x, 640 - h, w, h, "#2a5a94", INK, 3); for (let j = 0; j < h / 34 - 1; j++) for (let i = 0; i < w / 20 - 1; i++) if (r() < .3) R(g, x + 9 + i * 20, 652 - h + j * 34, 9, 16, YEL, null); x += w; }
     R(g, 0, 640, W, 214, "#0a0908", null); P(g, [[300, 640], [420, 640], [W + 60, H], [120, H]], BLUE, null);
     L(g, 330, 640, 330, 250, CREAM, 8); L(g, 330, 250, 380, 250, CREAM, 8); O(g, 386, 262, 18, YEL, CREAM, 4);
     // the man and his long shadow
@@ -80,9 +80,9 @@ const ART = {
     R(g, 30, 312, 120, 8, RED, null); T(g, "A CASE HE COULDN'T PUT DOWN", 30, 36, 28, TALL, CREAM, { align: "left", max: 440 });
   },
   sports(g, t) {
-    const r = rng(2); R(g, 0, 0, W, 520, SKY, null); rays(g, 256, 520, 22, 800, "#7cc9f5");
+    const r = rng(2); R(g, 0, 0, W, 520, SKY, null); rays(g, 256, 520, 22, 800, "#b5e0f0");
     R(g, 0, 440, W, 90, RED); for (let i = 0; i < 260; i++) O(g, r() * W, 448 + r() * 74, 5, [CREAM, YEL, INK, BLUE][i % 4], null);
-    for (let i = 0; i < 8; i++) P(g, [[256 + (i - 4) * 40, 530], [256 + (i - 3) * 40, 530], [256 + (i - 3) * 190, H], [256 + (i - 4) * 190, H]], i % 2 ? GREEN : "#178a4a", null);
+    for (let i = 0; i < 8; i++) P(g, [[256 + (i - 4) * 40, 530], [256 + (i - 3) * 40, 530], [256 + (i - 3) * 190, H], [256 + (i - 4) * 190, H]], i % 2 ? GREEN : "#4a9667", null);
     L(g, 0, 530, W, 530, INK, 5); g.beginPath(); g.ellipse(256, 760, 210, 60, 0, 0, 7); g.strokeStyle = CREAM; g.lineWidth = 7; g.stroke(); L(g, 0, 760, W, 760, CREAM, 7);
     for (const x of [56, 456]) { L(g, x, 530, x, 300, INK, 9); R(g, x - 40, 262, 80, 44, INK, null); for (let i = 0; i < 6; i++) O(g, x - 26 + (i % 3) * 26, 274 + (i / 3 | 0) * 20, 8, YEL, null); rays(g, x, 284, 16, 96, "rgba(255,244,214,.55)"); }
     // the ball, struck
@@ -97,7 +97,7 @@ const ART = {
     const r = rng(6); R(g, 0, 0, W, H, BLUE, null);
     for (let i = 0; i < 90; i++) { const x = r() * W, y = r() * H, s = r() * 4 + 1; R(g, x, y, s, s, CREAM, null); }
     // ringed planet
-    O(g, 380, 380, 120, ORANGE, INK, 7); g.save(); g.beginPath(); g.arc(380, 380, 117, 0, 7); g.clip(); O(g, 440, 430, 130, "#d95a10", null); for (let i = 0; i < 12; i++) L(g, 250, 300 + i * 22, 510, 280 + i * 22, "rgba(20,18,16,.35)", 3); g.restore();
+    O(g, 380, 380, 120, ORANGE, INK, 7); g.save(); g.beginPath(); g.arc(380, 380, 117, 0, 7); g.clip(); O(g, 440, 430, 130, "#d9703a", null); for (let i = 0; i < 12; i++) L(g, 250, 300 + i * 22, 510, 280 + i * 22, "rgba(20,18,16,.35)", 3); g.restore();
     g.beginPath(); g.ellipse(380, 380, 200, 44, -.3, .25, Math.PI - .25); g.strokeStyle = YEL; g.lineWidth = 14; g.stroke(); g.strokeStyle = INK; g.lineWidth = 3; g.beginPath(); g.ellipse(380, 380, 208, 50, -.3, .25, Math.PI - .25); g.stroke();
     // home moon with the dish
     g.beginPath(); g.arc(120, 980, 330, 0, 7); g.fillStyle = CREAM; g.fill(); g.strokeStyle = INK; g.lineWidth = 7; g.stroke(); O(g, 60, 770, 26, "#e6d9b4", INK, 3); O(g, 190, 810, 16, "#e6d9b4", INK, 3);
@@ -140,6 +140,10 @@ export function paintCover(cv, tape) {
   // box furniture shared by every tape
   R(g, 0, H - 46, W, 46, INK, null); T(g, "TOTI VIDEO", 16, H - 21, 30, OSD, CREAM, { align: "left" }); T(g, "VHS", W - 150, H - 21, 30, OSD, CREAM, { align: "right" });
   [CREAM, YEL, SKY, GREEN, ORANGE, RED, BLUE].forEach((c, i) => R(g, W - 136 + i * 17, H - 34, 17, 22, c, null));
+  // album-style frame: paper margin, then one clean ink line
+  g.strokeStyle = CREAM; g.lineWidth = 12; g.strokeRect(12, 12, W - 24, H - 70);
+  g.strokeStyle = INK; g.lineWidth = 3; g.strokeRect(19, 19, W - 38, H - 84);
+  for (let i = 0; i < 1600; i++) { g.fillStyle = `rgba(27,26,23,${Math.random() * .07})`; g.fillRect(Math.random() * W, Math.random() * H, 2, 2); }
   g.strokeStyle = INK; g.lineWidth = 12; g.strokeRect(0, 0, W, H);
   return cv;
 }
