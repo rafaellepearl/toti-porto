@@ -1,9 +1,21 @@
 # Toti Video — Efraim Toti's portfolio
 
-A static site: no build step, no dependencies. All artwork (storefront, tape covers, VHS noise, barcode, favicon) is drawn with JavaScript on canvas.
+A static site with no build step. You walk into a 3D video store (three.js), pull a tape off the shelf and open it. All artwork is painted by JavaScript on canvas — there are no image files.
 
-## Edit the content
-Everything on the shelves lives in `data.js`. Add a tape by copying an entry and changing its fields. Photos go in a `photos/` folder and are listed under `photos` in the same file.
+## Files
+- `index.html`, `style.css` — page shell and the text overlays
+- `data.js` — **all the content**: one entry per tape (title, genre, tagline, blurb, works, links)
+- `covers.js` — the cover paintings, one function per genre
+- `main.js` — the 3D store, camera walk and tape animation
+
+three.js is loaded from the jsDelivr CDN (see the `importmap` line in `index.html`).
+
+## Preview on your computer
+Opening `index.html` by double-click will not work (browsers block modules on `file://`). Run a local server in this folder instead:
+
+    python -m http.server 8000
+
+then open http://localhost:8000
 
 ## Deploy on GitHub Pages
 1. Create a repository and upload every file in this folder to its root (including `.nojekyll`).

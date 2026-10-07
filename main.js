@@ -1,352 +1,340 @@
-/* TOTI VIDEO — every picture on the site is drawn here, on canvas. */
-(() => {
-  const $ = (s, el = document) => el.querySelector(s);
-  const INK = "#0a0814", CREAM = "#f6ecd0", PINK = "#ff5fa2", CYAN = "#6fe3d6", SAND = "#f2d9a0";
-  const DISP = '"Bowlby One", Impact, sans-serif', OSD = 'VT323, monospace';
-  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  let fxOn = true;
+/* TOTI VIDEO — the 3D store. Geometry is boxes, textures are painted on canvas (covers.js). */
+import * as THREE from "three";
+import { paintCover, paintSign, INK, CREAM, RED, YEL, BLUE, GREEN, ORANGE, SKY } from "./covers.js";
 
-  // ---------- helpers ----------
-  const hash = s => { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
-  const rng = seed => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
-  const poly = (x, pts, fill, stroke = INK, lw = 2) => {
-    x.beginPath(); pts.forEach((p, i) => i ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1])); x.closePath();
-    if (fill) { x.fillStyle = fill; x.fill(); }
-    if (stroke) { x.strokeStyle = stroke; x.lineWidth = lw; x.lineJoin = "round"; x.stroke(); }
-  };
-  const box = (x, a, b, w, h, fill, stroke = INK, lw = 2) => {
-    if (fill) { x.fillStyle = fill; x.fillRect(a, b, w, h); }
-    if (stroke) { x.strokeStyle = stroke; x.lineWidth = lw; x.strokeRect(a, b, w, h); }
-  };
-  const circ = (x, a, b, r, fill, stroke = INK, lw = 2) => {
-    x.beginPath(); x.arc(a, b, r, 0, 7);
-    if (fill) { x.fillStyle = fill; x.fill(); }
-    if (stroke) { x.strokeStyle = stroke; x.lineWidth = lw; x.stroke(); }
-  };
-  const line = (x, a, b, c, d, col = INK, lw = 1) => { x.beginPath(); x.moveTo(a, b); x.lineTo(c, d); x.strokeStyle = col; x.lineWidth = lw; x.stroke(); };
-  // fine parallel hatching inside the current clip — the comic-book shading
-  const hatch = (x, a, b, w, h, gap, col, slant = 0.5) => {
-    x.strokeStyle = col; x.lineWidth = 1; x.beginPath();
-    for (let i = -h; i < w + h; i += gap) { x.moveTo(a + i, b); x.lineTo(a + i - h * slant, b + h); }
-    x.stroke();
-  };
-  const bands = (x, a, b, w, h, cols) => {
-    const n = cols.length; let y0 = 0;
-    cols.forEach((c, i) => { const y1 = h * (1 - Math.pow(1 - (i + 1) / n, 1.6)); x.fillStyle = c; x.fillRect(a, b + y0, w, y1 - y0 + 1); y0 = y1; });
-  };
-  const figure = (x, a, b, s, col = INK, rim = CREAM) => {   // small wanderer in a long coat and wide hat
-    poly(x, [[a - s * .28, b], [a - s * .1, b - s * .72], [a + s * .1, b - s * .72], [a + s * .3, b]], col, rim, 1);
-    circ(x, a, b - s * .82, s * .11, col, rim, 1);
-    x.beginPath(); x.ellipse(a, b - s * .9, s * .26, s * .05, 0, 0, 7); x.fillStyle = col; x.fill(); x.strokeStyle = rim; x.lineWidth = 1; x.stroke();
-  };
-  const ridge = (x, r, a, w, base, minH, maxH, steps, fill, hatchCol) => {
-    const pts = [[a, base]]; let h = minH + r() * (maxH - minH);
-    for (let i = 0; i < steps; i++) {
-      const x0 = a + w * i / steps, x1 = a + w * (i + 1) / steps;
-      if (r() < .55) h = minH + r() * (maxH - minH);
-      pts.push([x0 + 2, base - h], [x1 - 2, base - h]);
-    }
-    pts.push([a + w, base]);
-    poly(x, pts, fill, INK, 1.5);
-    if (hatchCol) { x.save(); x.beginPath(); pts.forEach((p, i) => i ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1])); x.clip(); hatch(x, a, base - maxH, w, maxH, 6, hatchCol, 0); x.restore(); }
-  };
+const D = window.DATA, $ = s => document.querySelector(s);
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const ease = k => k * k * (3 - 2 * k);
+const mk = () => document.createElement("canvas");
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 
-  // ---------- hero: the store at night ----------
-  function hero() {
-    const cv = $("#scene"), x = cv.getContext("2d");
-    let W, H, stars, tapes, seedR;
-    const TAPE_COLS = [PINK, CYAN, "#ff9a56", "#3b2a78", "#e0607e", "#1f4a5f", CREAM, "#6a2f7d"];
-    function size() {
-      const d = Math.min(devicePixelRatio || 1, 2);
-      W = cv.clientWidth; H = cv.clientHeight; cv.width = W * d; cv.height = H * d; x.setTransform(d, 0, 0, d, 0, 0);
-      const r = rng(77);
-      stars = Array.from({ length: Math.round(W * H / 5500) }, () => ({ x: r() * W, y: r() * H * .68, r: r() * 1.3 + .3, p: r() * 7, s: .5 + r() * 2, cross: r() < .07 }));
-      tapes = Array.from({ length: 400 }, () => TAPE_COLS[r() * TAPE_COLS.length | 0]);
-      draw(0);
-    }
-    function draw(t) {
-      const hz = H * .68, wide = W > 820;
-      const cx = wide ? W * .62 : W * .5;
-      // sky in flat bands
-      bands(x, 0, 0, W, hz, ["#06051a", "#0b0926", "#120e36", "#1b1448", "#2a1a5c", "#43226c", "#6a2f7d", "#a8477f", "#e0607e"]);
-      // stars
-      for (const s of stars) {
-        x.globalAlpha = .45 + .55 * Math.sin(t * s.s + s.p) ** 2; x.fillStyle = CREAM;
-        if (s.cross) { x.fillRect(s.x - 4, s.y - .5, 8, 1); x.fillRect(s.x - .5, s.y - 4, 1, 8); } else x.fillRect(s.x, s.y, s.r, s.r);
-      }
-      x.globalAlpha = 1;
-      // ringed planet
-      const pr = Math.min(W, H) * .1, px = wide ? W * .86 : W * .8, py = H * (wide ? .2 : .44);
-      x.save(); x.beginPath(); x.arc(px, py, pr, 0, 7); x.clip();
-      x.fillStyle = "#f3e3b3"; x.fillRect(px - pr, py - pr, pr * 2, pr * 2);
-      x.beginPath(); x.arc(px + pr * .45, py + pr * .25, pr * 1.05, 0, 7); x.fillStyle = "#e39a6f"; x.fill();
-      x.save(); x.clip(); hatch(x, px - pr, py - pr, pr * 2, pr * 2, 5, "rgba(10,8,20,.45)", .6); x.restore();
-      x.restore(); circ(x, px, py, pr, null, INK, 2);
-      x.beginPath(); x.ellipse(px, py, pr * 1.7, pr * .32, -.35, .12, Math.PI - .12); x.strokeStyle = CYAN; x.lineWidth = 3; x.stroke();
-      // drifting crystals
-      [[.12, .5, 1], [.3, .34, .6], [.5, .16, .8]].forEach(([fx, fy, s], i) => {
-        const a = W * fx, b = H * fy + Math.sin(t * .6 + i * 2) * 6, k = 14 * s * (wide ? 1.3 : 1);
-        poly(x, [[a, b - k * 1.6], [a + k, b], [a, b + k * 1.6], [a - k, b]], "#43226c", INK, 1.5);
-        poly(x, [[a, b - k * 1.6], [a + k, b], [a, b + k * .2]], CYAN, INK, 1);
-      });
-      // mesas
-      const r = rng(5);
-      ridge(x, r, -10, W + 20, hz, H * .03, H * .15, 14, "#3a2569", "rgba(10,8,20,.35)");
-      ridge(x, r, -10, W + 20, hz, H * .01, H * .06, 22, "#22164a", null);
-      // ground
-      x.fillStyle = "#0e1730"; x.fillRect(0, hz, W, H - hz);
-      for (let i = 1, y = hz; i < 16; i++) { y += i * i * .9; if (y > H) break; line(x, 0, y, W, y, "#1b2a4a", 1); }
-      for (let i = -9; i <= 9; i++) line(x, cx + i * 12, hz, cx + i * W * .16, H, "rgba(242,217,160,.16)", 2);
+start().catch(err => { console.error(err); document.body.classList.add("no3d"); });
 
-      // ---- the store ----
-      const bw = Math.min(W * .86, H * .8, 640), bh = bw * .42, base = hz + H * .11, bx = cx - bw / 2, by = base - bh;
-      const flick = reduce || !fxOn ? 1 : (Math.sin(t * 9) > .93 || Math.sin(t * 1.3) > .985 ? .45 : 1);
-      // light spilling on the lot
-      poly(x, [[bx + bw * .03, base], [bx + bw * .97, base], [bx + bw * 1.25, H], [bx - bw * .25, H]], "rgba(246,214,122,.12)", null);
-      poly(x, [[cx - bw * .07, base], [cx + bw * .07, base], [cx + bw * .2, H], [cx - bw * .2, H]], "rgba(111,227,214,.16)", null);
-      box(x, bx, by, bw, bh, "#241a52");
-      x.save(); x.beginPath(); x.rect(bx + bw * .9, by, bw * .1, bh); x.clip(); hatch(x, bx + bw * .9, by, bw * .1, bh, 5, "rgba(10,8,20,.6)"); x.restore();
-      // awning
-      const ay = by + bh * .06, ah = bh * .09, n = 22;
-      for (let i = 0; i < n; i++) { x.fillStyle = i % 2 ? CREAM : PINK; x.fillRect(bx + bw * i / n, ay, bw / n + 1, ah); }
-      box(x, bx, ay, bw, ah, null);
-      box(x, bx - bw * .02, by - bw * .025, bw * 1.04, bw * .03, "#3b2a78");
-      // windows full of tapes
-      const wy = by + bh * .24, wh = bh * .6, ww = bw * .36; let k = 0;
-      [bx + bw * .04, bx + bw * .6].forEach(wx => {
-        box(x, wx, wy, ww, wh, "#f6d67a");
-        const rows = 3, th = wh / rows;
-        for (let j = 0; j < rows; j++) {
-          const tw = ww / 26;
-          for (let i = 0; i < 26; i++) { x.fillStyle = tapes[k++ % 400]; x.fillRect(wx + i * tw + 1, wy + j * th + th * .22, tw - 1.5, th * .7); }
-          line(x, wx, wy + (j + 1) * th - 1, wx + ww, wy + (j + 1) * th - 1, INK, 2);
+async function start() {
+  // cover lettering needs the fonts; don't wait forever for them
+  await Promise.race([
+    Promise.all(['40px "Bowlby One"', "40px Anton", '40px "Space Mono"', "40px VT323"].map(f => document.fonts.load(f))).catch(() => {}),
+    new Promise(r => setTimeout(r, 2500))
+  ]);
+
+  const renderer = new THREE.WebGLRenderer({ canvas: $("#gl"), antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color("#0c1440");
+  const camera = new THREE.PerspectiveCamera(55, 1, 0.05, 140);
+
+  // ---------- materials & builders ----------
+  // No lights: every box gets six fixed shades of its colour, plus an ink outline. Flat, like a comic panel.
+  const SHADE = [.86, .86, 1.05, .68, 1, .92], cache = {};
+  const flat = c => cache[c] || (cache[c] = new THREE.MeshBasicMaterial({ color: c }));
+  const shaded = c => cache["s" + c] || (cache["s" + c] = SHADE.map(k => new THREE.MeshBasicMaterial({ color: new THREE.Color(c).multiplyScalar(k) })));
+  const inkLine = new THREE.LineBasicMaterial({ color: INK });
+  const tex = cv => { const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; };
+  const mapped = t => new THREE.MeshBasicMaterial({ map: t });
+  const withFaces = (c, t, faces) => { const m = shaded(c).slice(); faces.forEach(f => m[f] = mapped(t)); return m; };
+  function box(w, h, d, c, x, y, z, o = {}) {
+    const geo = new THREE.BoxGeometry(w, h, d), m = new THREE.Mesh(geo, o.mat || shaded(c));
+    m.position.set(x, y, z); (o.parent || scene).add(m);
+    if (o.edges !== false) m.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), inkLine));
+    return m;
+  }
+  const ball = (r, c, x, y, z, parent = scene) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 18, 12), flat(c)); m.position.set(x, y, z); parent.add(m); return m; };
+  let seed = 11; const rnd = () => { seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+
+  // ---------- outside, at night ----------
+  box(90, .1, 50, "#161d3a", 0, -.05, 22, { edges: false });
+  for (let i = -3; i <= 3; i++) box(.14, .02, 5, YEL, i * 2.7, .01, 6.5, { edges: false });
+  {
+    const n = 320, a = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { a[i * 3] = (rnd() - .5) * 150; a[i * 3 + 1] = 5 + rnd() * 50; a[i * 3 + 2] = -30 - rnd() * 30; }
+    const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(a, 3));
+    scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color: CREAM, size: .35 })));
+  }
+  ball(3.2, CREAM, -17, 19, -40);
+  box(.14, 5.2, .14, INK, -7.2, 2.6, 4, { edges: false }); ball(.32, YEL, -7.2, 5.3, 4);
+  // facade
+  box(4.1, 4.2, .25, RED, -2.95, 2.1, 0); box(4.1, 4.2, .25, RED, 2.95, 2.1, 0); box(1.8, 1.5, .25, RED, 0, 3.45, 0);
+  box(10.8, .3, 17.8, BLUE, 0, 4.4, -8.5);
+  {
+    const cv = mk(); cv.width = 512; cv.height = 64; const g = cv.getContext("2d");
+    for (let i = 0; i < 16; i++) { g.fillStyle = i % 2 ? CREAM : YEL; g.fillRect(i * 32, 0, 32, 64); }
+    const t = tex(cv); box(10.4, .4, 1.1, YEL, 0, 3.0, .6, { mat: withFaces(YEL, t, [2, 3, 4]) });
+  }
+  {
+    const cv = mk(); cv.width = 512; cv.height = 256; const g = cv.getContext("2d"), cols = [RED, YEL, BLUE, GREEN, ORANGE, CREAM, INK, SKY];
+    g.fillStyle = "#ffe9a0"; g.fillRect(0, 0, 512, 256);
+    for (let r = 0; r < 3; r++) { for (let i = 0; i < 34; i++) { g.fillStyle = cols[rnd() * 8 | 0]; g.fillRect(6 + i * 15, 12 + r * 82, 12, 62); } g.fillStyle = INK; g.fillRect(0, 76 + r * 82, 512, 8); }
+    g.strokeStyle = INK; g.lineWidth = 12; g.strokeRect(0, 0, 512, 256); g.fillRect(250, 0, 12, 256);
+    const t = tex(cv); for (const x of [-2.95, 2.95]) box(3.1, 1.55, .06, INK, x, 1.55, .15, { mat: withFaces(INK, t, [4]) });
+  }
+  const signMat = mapped(tex(paintSign(mk(), "TOTI VIDEO", INK, YEL, 1024, 222)));
+  { const m = shaded(INK).slice(); m[4] = signMat; box(6.2, 1.35, .3, INK, 0, 5.4, .2, { mat: m }); box(.12, .5, .12, INK, -2.4, 4.7, .2, { edges: false }); box(.12, .5, .12, INK, 2.4, 4.7, .2, { edges: false }); }
+  const glass = new THREE.MeshBasicMaterial({ color: SKY, transparent: true, opacity: .45 });
+  const doorL = box(.9, 2.7, .06, SKY, -.45, 1.35, 0, { mat: glass }), doorR = box(.9, 2.7, .06, SKY, .45, 1.35, 0, { mat: glass });
+
+  // ---------- inside ----------
+  {
+    const cv = mk(); cv.width = cv.height = 64; const g = cv.getContext("2d");
+    g.fillStyle = CREAM; g.fillRect(0, 0, 64, 64); g.fillStyle = RED; g.fillRect(0, 0, 32, 32); g.fillRect(32, 32, 32, 32);
+    const t = tex(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(5, 8.5); t.magFilter = THREE.NearestFilter;
+    box(10, .1, 17, CREAM, 0, -.05, -8.5, { mat: withFaces(CREAM, t, [2]), edges: false });
+  }
+  box(10, .1, 17, CREAM, 0, 4.25, -8.5, { edges: false });
+  for (const s of [-1, 1]) { box(.2, 4.2, 17, YEL, s * 5.1, 2.1, -8.5); box(.22, .3, 17, RED, s * 5.09, 3.85, -8.5, { edges: false }); }
+  box(10, 4.2, .2, SKY, 0, 2.1, -17.1);
+  for (const z of [-2.5, -6, -9.5, -13]) for (const x of [-2.3, 2.3]) box(1.3, .06, 2.2, "#ffffff", x, 4.17, z, { mat: flat("#ffffff") });
+
+  // which tape lives where: alternating left / right down the aisle
+  const spot = i => ({ s: i % 2 ? 1 : -1, z: -3.2 - i * 1.75 });
+  const ROWS = [.25, 1.3, 2.35];
+
+  // the lemari: two long shelving units, packed spine-out
+  {
+    const geo = new THREE.BoxGeometry(.5, .86, .12), grey = SHADE.map(k => new THREE.MeshBasicMaterial({ color: new THREE.Color(k, k, k) }));
+    const im = new THREE.InstancedMesh(geo, grey, 700), o = new THREE.Object3D(), col = new THREE.Color();
+    const cols = [RED, YEL, BLUE, GREEN, ORANGE, CREAM, SKY, "#f0f0f0", "#2b2926", "#ff9fb0", "#8a4fd0"];
+    let n = 0;
+    for (const s of [-1, 1]) {
+      const c = s < 0 ? BLUE : GREEN;
+      box(.08, 3.6, 13.3, c, s * 4.95, 1.95, -8.5);
+      for (const y of [...ROWS, 3.4]) box(.68, .07, 13.3, c, s * 4.62, y, -8.5);
+      for (const z of [-1.85, -15.15]) box(.68, 3.6, .08, c, s * 4.62, 1.95, z);
+      ROWS.forEach((y, r) => {
+        for (let z = -2.02; z > -15.05; z -= .135) {
+          if (r === 1 && D.tapes.some((_, i) => spot(i).s === s && Math.abs(spot(i).z - z) < .5)) continue;
+          if (rnd() < .05 || n >= 700) continue;
+          o.position.set(s * 4.6, y + .035 + .43, z); o.rotation.set(rnd() < .07 ? (rnd() - .5) * .45 : 0, 0, 0); o.updateMatrix();
+          im.setMatrixAt(n, o.matrix); im.setColorAt(n, col.set(cols[rnd() * cols.length | 0])); n++;
         }
-        line(x, wx + ww / 2, wy, wx + ww / 2, wy + wh, INK, 3);
-        box(x, wx, wy, ww, wh, null, INK, 3);
       });
-      // door
-      const dw = bw * .13, dy = by + bh * .3;
-      box(x, cx - dw / 2, dy, dw, base - dy, "#9af0e4", INK, 3);
-      line(x, cx, dy, cx, base, INK, 2); box(x, cx + dw * .08, dy + (base - dy) * .5, dw * .06, bh * .1, INK, null);
-      x.font = `${bw * .045}px ${OSD}`; x.textAlign = "center"; x.textBaseline = "middle";
-      x.fillStyle = Math.sin(t * 2) > -.6 ? CYAN : "#27504f"; x.shadowColor = CYAN; x.shadowBlur = 10;
-      x.fillText("OPEN", cx, by + bh * .22); x.shadowBlur = 0;
-      // roof sign
-      const sw = bw * .74, sh = bw * .15, sx = cx - sw / 2, sy = by - bw * .025 - sh - bw * .02;
-      line(x, sx + sw * .15, sy + sh, sx + sw * .15, by, INK, 4); line(x, sx + sw * .85, sy + sh, sx + sw * .85, by, INK, 4);
-      box(x, sx, sy, sw, sh, "#0d0a24", INK, 3); box(x, sx + 5, sy + 5, sw - 10, sh - 10, null, `rgba(111,227,214,${.8 * flick})`, 2);
-      x.font = `${sh * .62}px ${DISP}`; x.globalAlpha = flick;
-      x.shadowColor = PINK; x.shadowBlur = 24; x.fillStyle = PINK; x.fillText("TOTI VIDEO", cx, sy + sh * .54);
-      x.shadowBlur = 6; x.fillStyle = "#ffe3ef"; x.fillText("TOTI VIDEO", cx, sy + sh * .54);
-      x.shadowBlur = 0; x.globalAlpha = 1;
-      // neon reflected in the wet lot
-      x.fillStyle = `rgba(255,95,162,${.14 * flick})`;
-      for (let i = 0; i < 6; i++) x.fillRect(cx - sw * (.4 - i * .03), base + 14 + i * 13, sw * (.8 - i * .06), 4);
-      // lamp post
-      const sd = wide ? -1 : 1, lx = wide ? bx + bw * 1.13 : bx - bw * .16, lh = bh * 1.5;
-      if (lx > 20 && lx < W - 20) {
-        poly(x, [[lx + sd * bw * .05, base - lh], [lx + sd * bw * .2, H], [lx - sd * bw * .1, H]], "rgba(246,236,208,.08)", null);
-        line(x, lx, base + 20, lx, base - lh, INK, 5); line(x, lx, base - lh, lx + sd * bw * .06, base - lh, INK, 5);
-        box(x, lx + sd * bw * .055 - bw * .025, base - lh, bw * .05, 7, CREAM, INK, 2);
-      }
-      // a customer returning a tape
-      const fs = bh * .52, fxp = cx + bw * .2, fy = base + H * .04;
-      figure(x, fxp, fy, fs); box(x, fxp - fs * .42, fy - fs * .5, fs * .16, fs * .26, CYAN, INK, 1.5);
     }
-    addEventListener("resize", size); size();
-    document.fonts && document.fonts.ready.then(() => draw(0));
-    if (!reduce) { let last = 0; const loop = ms => { if (fxOn && ms - last > 80) { last = ms; draw(ms / 1000); } requestAnimationFrame(loop); }; requestAnimationFrame(loop); }
+    im.count = n; im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true;
+    scene.add(im);
   }
 
-  // ---------- tape covers ----------
-  const PALS = [
-    { sky: ["#141033", "#2c1c5e", "#6a2f7d", "#e0607e"], ground: "#1b2a4a", far: "#3a2569", acc: CYAN, sun: "#f6e3b0" },
-    { sky: ["#0d1b2a", "#16324f", "#2a6f7f", "#f2b872"], ground: "#3b1f4f", far: "#1f4a5f", acc: PINK, sun: CREAM },
-    { sky: ["#1a0f2e", "#4a1942", "#a23b5a", "#ff9a56"], ground: "#16203a", far: "#5b2350", acc: CYAN, sun: "#ffe9a8" },
-    { sky: ["#081a24", "#0f3b46", "#3f8f86", "#f2d9a0"], ground: "#2a1840", far: "#14505a", acc: "#ff7a59", sun: "#fff3cf" }
-  ];
-  const MOTIF = {
-    memory(x, g, P, r) {       // picture frames drifting up into the night
-      for (let i = 0; i < 5; i++) {
-        const w = 26 + r() * 22, a = g.x + 14 + r() * (g.w - w - 28), b = g.y + 14 + i * (g.hy - g.y - 50) / 5 + r() * 10;
-        x.save(); x.translate(a + w / 2, b + w * .4); x.rotate((r() - .5) * .6);
-        box(x, -w / 2, -w * .4, w, w * .8, CREAM, INK, 1.5); box(x, -w / 2 + 4, -w * .4 + 4, w - 8, w * .8 - 8, i % 2 ? P.acc : P.sky[2], INK, 1);
-        x.restore();
-      }
-      figure(x, g.x + g.w * .5, g.hy + 30, 44);
-    },
-    phone(x, g, P) {           // a lit phone booth, receiver off the hook
-      const a = g.x + g.w * .56, b = g.hy + 26, w = 48, h = 108;
-      box(x, a, b - h, w, h, P.far); box(x, a + 6, b - h + 16, w - 12, h * .55, P.sun); box(x, a - 4, b - h - 8, w + 8, 10, P.acc);
-      line(x, a + w / 2, b - h + 16, a + w / 2, b - h + 16 + h * .55, INK, 1.5); line(x, a + 6, b - h + 45, a + w - 6, b - h + 45, INK, 1.5);
-      x.beginPath(); x.moveTo(a + 10, b - 40); for (let i = 0; i < 9; i++) x.quadraticCurveTo(a - 8 - i * 8, b - 30 + (i % 2 ? -12 : 12), a - 14 - i * 8, b - 30 + i * 2);
-      x.strokeStyle = INK; x.lineWidth = 2; x.stroke();
-      x.save(); x.translate(a - 92, b - 14); x.rotate(-.5); box(x, -16, -5, 32, 10, CREAM); circ(x, -14, 3, 7, CREAM); circ(x, 14, 3, 7, CREAM); x.restore();
-    },
-    pitch(x, g, P) {           // floodlit pitch, the ball hung like a moon
-      x.fillStyle = "#1f6a55"; x.fillRect(g.x, g.hy, g.w, g.y + g.h - g.hy);
-      for (let i = 0; i < 6; i += 2) { x.fillStyle = "rgba(246,236,208,.1)"; x.fillRect(g.x, g.hy + i * 12, g.w, 12); }
-      const c = g.x + g.w / 2; line(x, g.x, g.hy + 34, g.x + g.w, g.hy + 34, CREAM, 2);
-      x.beginPath(); x.ellipse(c, g.hy + 34, 44, 15, 0, 0, 7); x.strokeStyle = CREAM; x.lineWidth = 2; x.stroke();
-      [g.x + 26, g.x + g.w - 26].forEach(a => { line(x, a, g.hy + 8, a, g.hy - 90, INK, 3); box(x, a - 12, g.hy - 104, 24, 14, P.sun); poly(x, [[a - 12, g.hy - 90], [a + 12, g.hy - 90], [c + (a < c ? -10 : 10), g.hy + 30]], "rgba(255,243,207,.13)", null); });
-      circ(x, c, g.y + 62, 26, CREAM); poly(x, [[c, g.y + 50], [c + 11, g.y + 58], [c + 7, g.y + 71], [c - 7, g.y + 71], [c - 11, g.y + 58]], INK, null);
-    },
-    city(x, g, P, r) {         // skyline with a few windows still on
-      for (let a = g.x; a < g.x + g.w;) {
-        const w = 16 + r() * 22, h = 40 + r() * 120;
-        box(x, a, g.hy + 20 - h, w, h, r() < .5 ? P.far : INK, INK, 1.5);
-        for (let j = 0; j < h / 12 - 1; j++) for (let i = 0; i < w / 8 - 1; i++) if (r() < .3) { x.fillStyle = r() < .7 ? P.sun : P.acc; x.fillRect(a + 4 + i * 8, g.hy + 26 - h + j * 12, 4, 6); }
-        a += w;
-      }
-      figure(x, g.x + g.w * .28, g.hy + 58, 30);
-    },
-    eye(x, g, P) {             // something huge is watching
-      const c = g.x + g.w / 2, m = g.y + 78, w = g.w * .42;
-      for (let i = 0; i < 14; i++) { const a = Math.PI + i * Math.PI / 13; line(x, c + Math.cos(a) * w * 1.05, m + Math.sin(a) * 50, c + Math.cos(a) * w * 1.4, m + Math.sin(a) * 78, P.sun, 1.5); }
-      x.beginPath(); x.moveTo(c - w, m); x.quadraticCurveTo(c, m - 62, c + w, m); x.quadraticCurveTo(c, m + 62, c - w, m); x.closePath();
-      x.fillStyle = CREAM; x.fill(); x.strokeStyle = INK; x.lineWidth = 2.5; x.stroke();
-      circ(x, c, m, 26, P.acc); circ(x, c, m, 11, INK, null); circ(x, c - 8, m - 8, 4, CREAM, null);
-      figure(x, c - 30, g.hy + 44, 34); line(x, c - 30, g.hy + 44, c + 60, g.hy + 62, "rgba(10,8,20,.6)", 5);
-    },
-    antenna(x, g, P) {         // broadcast mast, signal going out
-      const c = g.x + g.w / 2, top = g.y + 54, b = g.hy + 30;
-      x.strokeStyle = P.acc; x.lineWidth = 2;
-      for (let i = 1; i < 6; i++) { x.globalAlpha = 1 - i * .15; x.beginPath(); x.arc(c, top, i * 17, -2.5, -.64); x.stroke(); x.beginPath(); x.arc(c, top, i * 17, .64, 2.5); x.stroke(); }
-      x.globalAlpha = 1;
-      line(x, c, top, c - 26, b, INK, 3); line(x, c, top, c + 26, b, INK, 3);
-      for (let i = 1; i < 7; i++) { const y = top + (b - top) * i / 7, w = 26 * i / 7, y0 = top + (b - top) * (i - 1) / 7, w0 = 26 * (i - 1) / 7; line(x, c - w, y, c + w, y, INK, 1.5); line(x, c - w0, y0, c + w, y, INK, 1); line(x, c + w0, y0, c - w, y, INK, 1); }
-      circ(x, c, top, 6, PINK);
-      box(x, c + 44, b - 18, 30, 18, P.far); box(x, c + 50, b - 12, 8, 6, P.sun, null);
-    },
-    boxes(x, g, P, r) {        // parcels stacked on the horizon
-      const s = 34, cols = [SAND, "#e39a6f", P.acc];
-      [[0, 0], [1, 0], [2, 0], [.5, 1], [1.5, 1], [1, 2], [3.3, 0]].forEach(([i, j], n) => {
-        const a = g.x + 26 + i * (s + 2), b = g.hy + 44 - j * s;
-        box(x, a, b - s, s, s, cols[n % 3]); poly(x, [[a, b - s], [a + 9, b - s - 9], [a + s + 9, b - s - 9], [a + s, b - s]], CREAM);
-        poly(x, [[a + s, b - s], [a + s + 9, b - s - 9], [a + s + 9, b - 9], [a + s, b]], P.far); line(x, a + s / 2, b - s, a + s / 2, b - s * .6, INK, 3);
-      });
-      x.setLineDash([6, 6]); x.beginPath(); x.moveTo(g.x + 10, g.y + 96); x.quadraticCurveTo(g.x + g.w * .5, g.y + 10, g.x + g.w - 22, g.y + 66); x.strokeStyle = CREAM; x.lineWidth = 2; x.stroke(); x.setLineDash([]);
-      poly(x, [[g.x + g.w - 14, g.y + 74], [g.x + g.w - 32, g.y + 66], [g.x + g.w - 20, g.y + 54]], CREAM);
-    },
-    houses(x, g, P, r) {       // a new town, lights on
-      for (let row = 0; row < 2; row++) for (let i = 0; i < 4 - row; i++) {
-        const w = 40 + row * 10, a = g.x + 8 + i * (w + 10) + row * 14, b = g.hy + 8 + row * 44, h = 26 + row * 6;
-        box(x, a, b - h, w, h, row ? SAND : P.far); poly(x, [[a - 4, b - h], [a + w / 2, b - h - 20 - row * 4], [a + w + 4, b - h]], i % 2 ? PINK : "#ff9a56");
-        box(x, a + 6, b - h + 7, 9, 9, P.sun, INK, 1); box(x, a + w - 16, b - 16, 9, 16, INK, null);
-      }
-      [g.x + g.w - 26, g.x + 20].forEach(a => { line(x, a, g.hy + 62, a, g.hy + 34, INK, 3); circ(x, a, g.hy + 26, 13, "#3f8f86"); });
-    },
-    morph(x, g, P) {           // one shape becoming another
-      const m = g.y + 84, c = g.x + g.w / 2;
-      box(x, c - 84, m - 24, 48, 48, P.far); x.save(); x.beginPath(); x.rect(c - 84, m - 24, 48, 48); x.clip(); hatch(x, c - 84, m - 24, 48, 48, 5, "rgba(10,8,20,.5)"); x.restore();
-      circ(x, c + 60, m, 28, P.acc);
-      for (let i = 0; i < 5; i++) circ(x, c - 24 + i * 12, m + Math.sin(i * 1.4) * 8, 2 + i * .6, CREAM, null);
-      poly(x, [[c - 20, g.hy + 50], [c + 8, g.hy - 14], [c + 36, g.hy + 50]], PINK); figure(x, c - 52, g.hy + 54, 30);
-    }
-  };
-
-  function wrap(x, text, max) {
-    const out = []; let cur = "";
-    for (const w of text.split(" ")) { const t = cur ? cur + " " + w : w; if (x.measureText(t).width > max && cur) { out.push(cur); cur = w; } else cur = t; }
-    if (cur) out.push(cur); return out;
-  }
-
-  function cover(cv, it, tag) {
-    const W = 240, H = 400, d = Math.min(devicePixelRatio || 1, 2) * (cv.id === "box-cover" ? 1.5 : 1);
-    cv.width = W * d; cv.height = H * d; const x = cv.getContext("2d"); x.setTransform(d, 0, 0, d, 0, 0);
-    const r = rng(hash(it.title)), P = PALS[it.pal ?? (r() * PALS.length | 0)];
-    x.fillStyle = "#0d0a24"; x.fillRect(0, 0, W, H);
-    // label strip
-    x.font = `17px ${OSD}`; x.textBaseline = "middle"; x.textAlign = "left"; if (x.measureText("TOTI VIDEO  " + tag.toUpperCase()).width < W - 24) { x.fillStyle = CREAM; x.fillText("TOTI VIDEO", 12, 20); }
-    x.textAlign = "right"; x.fillStyle = P.acc; x.fillText(tag.toUpperCase(), W - 12, 20);
-    // art panel
-    const g = { x: 10, y: 34, w: W - 20, h: 232 }; g.hy = g.y + g.h * .66;
-    x.save(); x.beginPath(); x.rect(g.x, g.y, g.w, g.h); x.clip();
-    bands(x, g.x, g.y, g.w, g.hy - g.y, P.sky);
-    for (let i = 0; i < 40; i++) { x.fillStyle = CREAM; x.globalAlpha = .4 + r() * .6; x.fillRect(g.x + r() * g.w, g.y + r() * g.h * .5, 1.4, 1.4); } x.globalAlpha = 1;
-    if (!["pitch", "eye"].includes(it.art)) { const sx = g.x + 30 + r() * (g.w - 130), sy = g.y + 34 + r() * 30; circ(x, sx, sy, 15 + r() * 10, P.sun, INK, 1.5); }
-    ridge(x, r, g.x - 4, g.w + 8, g.hy, 8, 40, 9, P.far, "rgba(10,8,20,.3)");
-    x.fillStyle = P.ground; x.fillRect(g.x, g.hy, g.w, g.h);
-    for (let i = 1, y = g.hy; i < 9; i++) { y += i * 2.4; line(x, g.x, y, g.x + g.w, y, "rgba(10,8,20,.35)", 1); }
-    (MOTIF[it.art] || MOTIF.city)(x, g, P, r);
-    x.restore(); box(x, g.x, g.y, g.w, g.h, null, CREAM, 2);
-    // title
-    const t = it.title.toUpperCase(); let fs = 30, lines;
-    x.textAlign = "left"; x.textBaseline = "alphabetic";
-    do { x.font = `${fs}px ${DISP}`; lines = wrap(x, t, W - 24); fs -= 2; } while ((lines.length > 4 || lines.length * (fs + 2) * 1.02 > 92 || lines.some(l => x.measureText(l).width > W - 20)) && fs > 9);
-    fs += 2; const lh = fs * 1.02; let y = 278 + fs * .85;
-    for (const l of lines) { x.fillStyle = PINK; x.fillText(l, 14, y + 2); x.fillStyle = CREAM; x.fillText(l, 12, y); y += lh; }
-    x.font = `17px ${OSD}`; x.fillStyle = P.acc; x.fillText([it.year, "VHS"].filter(Boolean).join("  ·  "), 12, H - 12);
-    // colour bars down in the corner
-    ["#f6ecd0", "#ffe14d", CYAN, "#5fd66a", PINK, "#e0443a", "#3b5bd6"].forEach((c, i) => { x.fillStyle = c; x.fillRect(W - 12 - (7 - i) * 8, H - 24, 8, 12); });
-    // sticker
-    if (it.sticker) {
-      x.save(); x.translate(W - 44, 70); x.rotate(.28); circ(x, 0, 0, 30, it.sticker === "LIVE" ? "#e0443a" : "#ffe14d", INK, 2);
-      x.fillStyle = it.sticker === "LIVE" ? CREAM : INK; x.textAlign = "center"; x.textBaseline = "middle";
-      const w = it.sticker.split(" "); x.font = `${w.length > 1 ? 15 : 20}px ${DISP}`; w.forEach((s, i) => x.fillText(s, 0, (i - (w.length - 1) / 2) * 16 + 1)); x.restore();
-    }
-    // shelf wear
-    x.strokeStyle = "rgba(246,236,208,.1)"; x.lineWidth = 1;
-    for (let i = 0; i < 9; i++) { const a = r() * W, b = r() * H; x.beginPath(); x.moveTo(a, b); x.lineTo(a + (r() - .5) * 60, b + (r() - .5) * 14); x.stroke(); }
-    x.fillStyle = "rgba(246,236,208,.12)"; x.fillRect(0, 0, 3, H); x.fillStyle = "rgba(0,0,0,.35)"; x.fillRect(W - 4, 0, 4, H);
-  }
-
-  // ---------- build the shelves ----------
-  function shelves() {
-    const root = $("#aisles"), dlg = $("#box"), all = [];
-    DATA.aisles.forEach((a, i) => {
-      const sec = document.createElement("section"); sec.className = "aisle"; sec.id = a.id;
-      sec.innerHTML = `<div class="sign"><span>Aisle ${String(i + 1).padStart(2, "0")} · ${a.tag}</span><h2>${a.name}</h2></div><div class="shelf"></div>`;
-      a.tapes.forEach(it => {
-        const b = document.createElement("button"); b.className = "tape"; b.type = "button";
-        b.setAttribute("aria-label", `${it.title}${it.year ? ", " + it.year : ""} — ${it.role}. Open details.`);
-        const cv = document.createElement("canvas"); b.append(cv); all.push([cv, it, a.tag]);
-        b.onclick = () => {
-          $("#box-tag").textContent = [a.tag, it.year].filter(Boolean).join(" · ");
-          $("#box-title").textContent = it.title; $("#box-role").textContent = it.role;
-          $("#box-blurb").textContent = it.blurb || ""; $("#box-notes").textContent = it.notes || "";
-          $("#box-link").hidden = !it.link; $("#box-out").hidden = !!it.link; if (it.link) $("#box-link").href = it.link;
-          cover($("#box-cover"), it, a.tag); dlg.showModal();
-        };
-        $(".shelf", sec).append(b);
-      });
-      root.append(sec);
+  // the seven tapes
+  const insideTex = tex(paintSign(mk(), "BE KIND · REWIND", CREAM, RED, 512, 854));
+  const tapes = [], signs = [];
+  D.tapes.forEach((d, i) => {
+    const { s, z } = spot(i), g = new THREE.Group();
+    box(.54, .9, .1, INK, 0, 0, -.01, { parent: g });
+    const pivot = new THREE.Group(); pivot.position.set(-.27, 0, .04); g.add(pivot);
+    const lm = shaded(INK).slice(); lm[4] = mapped(tex(paintCover(mk(), d))); lm[5] = mapped(insideTex);
+    box(.54, .9, .02, INK, .27, 0, .01, { parent: pivot, mat: lm });
+    const cas = new THREE.Group(); cas.visible = false; g.add(cas);
+    box(.44, .27, .05, "#2b2926", 0, 0, 0, { parent: cas });
+    box(.32, .07, .054, CREAM, 0, -.075, 0, { parent: cas, edges: false });
+    const reels = [-.1, .1].map(x => {
+      const r = new THREE.Mesh(new THREE.CylinderGeometry(.048, .048, .056, 20), flat(CREAM));
+      r.rotation.x = Math.PI / 2; r.position.set(x, .035, 0); cas.add(r);
+      box(.085, .058, .014, INK, 0, 0, 0, { parent: r, edges: false }); box(.014, .058, .085, INK, 0, 0, 0, { parent: r, edges: false });
+      return r;
     });
-    const paint = () => all.forEach(a => cover(...a));
-    paint(); document.fonts && document.fonts.ready.then(paint);
-    $("#eject").onclick = () => dlg.close();
-    dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
+    g.position.set(s * 4.3, ROWS[1] + .035 + .45, z); g.rotation.y = -s * Math.PI / 2;
+    g.userData = { i, pivot, cas, reels, home: g.position.clone(), homeQ: g.quaternion.clone(), grow: 1 };
+    scene.add(g); tapes.push(g);
+    // a genre sign swinging above it
+    const hang = new THREE.Group(); hang.position.set(s * 4.1, 4.2, z); hang.rotation.y = -s * Math.PI / 2; scene.add(hang);
+    const st = tex(paintSign(mk(), d.genre.toUpperCase(), d.colors.bg, d.colors.fg));
+    box(1.5, .42, .05, INK, 0, -1.72, 0, { parent: hang, mat: withFaces(INK, st, [4, 5]) });
+    for (const x of [-.6, .6]) box(.016, 1.52, .016, INK, x, -.76, 0, { parent: hang, edges: false });
+    signs.push(hang);
+  });
 
-    const wall = $("#photo-wall");
-    if (DATA.photos.length) DATA.photos.forEach(p => { const f = document.createElement("figure"); const im = new Image(); im.src = p.src; im.alt = p.caption || "Photograph by Efraim Toti"; im.loading = "lazy"; const c = document.createElement("figcaption"); c.textContent = p.caption || ""; f.append(im, c); wall.append(f); });
-    else wall.innerHTML = `<div class="out">All copies currently rented out — prints back on the wall soon</div>`;
+  // ceiling fans
+  const fans = [-5, -11].map(z => {
+    const f = new THREE.Group(); f.position.set(0, 3.95, z); scene.add(f);
+    box(.08, .3, .08, INK, 0, .15, 0, { parent: f, edges: false }); box(.3, .14, .3, INK, 0, 0, 0, { parent: f });
+    for (let k = 0; k < 4; k++) { const a = new THREE.Group(); a.rotation.y = k * Math.PI / 2; f.add(a); box(1.5, .03, .26, ORANGE, .9, 0, 0, { parent: a }); }
+    return f;
+  });
+
+  // the counter at the back
+  box(5.6, 1.1, .9, ORANGE, 0, .55, -15.9); box(5.8, .08, 1.05, CREAM, 0, 1.14, -15.9);
+  box(1.3, 1.0, .9, INK, -1.6, 1.7, -15.9);
+  const tvCv = mk(); tvCv.width = 256; tvCv.height = 192; const tvG = tvCv.getContext("2d"), tvTex = tex(tvCv);
+  box(1.02, .76, .02, INK, -1.6, 1.73, -15.44, { mat: withFaces(INK, tvTex, [4]) });
+  box(.7, .34, .5, RED, 1.5, 1.35, -15.9); box(.5, .26, .08, CREAM, 1.5, 1.66, -15.8);
+  box(6.4, 1.0, .06, RED, 0, 3.3, -16.97, { mat: withFaces(RED, tex(paintSign(mk(), "BE KIND · REWIND", RED, CREAM, 1024, 160)), [4]) });
+  const balloons = [[2.5, RED], [2.85, YEL], [3.2, BLUE]].map(([x, c], k) => {
+    const b = new THREE.Group(); b.position.set(x, 2.5 + k * .22, -15.7); scene.add(b);
+    const m = ball(.3, c, 0, 0, 0, b); m.scale.y = 1.2; box(.012, 1.4, .012, INK, 0, -1.05, 0, { parent: b, edges: false });
+    return b;
+  });
+  // a floor-cleaning robot doing its rounds
+  const bot = new THREE.Group(); scene.add(bot);
+  { const c = new THREE.Mesh(new THREE.CylinderGeometry(.3, .3, .14, 24), flat(GREEN)); c.position.y = .09; bot.add(c);
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(.2, .2, .04, 24), flat(YEL)); top.position.y = .18; bot.add(top);
+    for (const x of [-.1, .1]) { ball(.06, CREAM, x, .2, .16, bot); ball(.03, INK, x, .2, .21, bot); }
+    box(.012, .3, .012, INK, 0, .34, -.1, { parent: bot, edges: false }); ball(.04, RED, 0, .5, -.1, bot); }
+  // dust in the tube light
+  const dustN = 260, dustA = new Float32Array(dustN * 3);
+  for (let i = 0; i < dustN; i++) { dustA[i * 3] = (rnd() - .5) * 9; dustA[i * 3 + 1] = rnd() * 4; dustA[i * 3 + 2] = -rnd() * 17; }
+  const dustGeo = new THREE.BufferGeometry(); dustGeo.setAttribute("position", new THREE.BufferAttribute(dustA, 3));
+  scene.add(new THREE.Points(dustGeo, new THREE.PointsMaterial({ color: "#ffffff", size: .03, transparent: true, opacity: .8 })));
+
+  // ---------- the walk: one stop per screen of scroll ----------
+  let stops = [];
+  const stopsEl = $("#stops"), dots = $("#dots");
+  function layout() {
+    const w = window.innerWidth, h = window.innerHeight, portrait = w / h < .85;
+    renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = portrait ? 72 : 55; camera.updateProjectionMatrix();
+    stops = [
+      { kind: "hero", id: "top", p: V(0, 1.7, portrait ? 15 : 10.5), l: V(0, 2.8, 0) },
+      { kind: "enter", id: "enter", p: V(0, 1.75, -.6), l: V(0, 1.7, -10) },
+      ...D.tapes.map((d, i) => { const { s, z } = spot(i), y = ROWS[1] + .5; return { kind: "tape", id: d.id, i, p: V(s * (portrait ? 1.5 : 2.05), y, z), l: V(s * 4.3, y + (portrait ? -.25 : 0), z) }; }),
+      { kind: "counter", id: "counter", p: V(0, 1.7, -12.6), l: V(0, 1.75, -17) }
+    ];
+  }
+  layout(); addEventListener("resize", layout);
+  stops.forEach((s, n) => {
+    const sec = el("section", "stop"); sec.id = s.id; stopsEl.append(sec);
+    const a = el("a"); a.href = "#" + s.id; a.setAttribute("aria-label", s.kind === "tape" ? D.tapes[s.i].name : s.kind === "hero" ? "Outside" : s.kind === "enter" ? "Entrance" : "Counter"); dots.append(a);
+  });
+
+  // ---------- text ----------
+  $("#h-name").innerHTML = D.owner.name.replace(" ", "<br>"); $("#h-roles").textContent = D.owner.roles; $("#c-roles").textContent = D.owner.roles;
+  $("#c-mail").textContent = D.owner.email; $("#c-mail").href = "mailto:" + D.owner.email; $("#c-tel").textContent = D.owner.phone; $("#c-tel").href = "tel:" + D.owner.tel;
+  let active = -2;
+  function setActive(n) {
+    if (n === active) return; active = n; const s = stops[n];
+    document.body.dataset.stop = s ? s.kind : "";
+    [...dots.children].forEach((a, k) => a.classList.toggle("on", k === n));
+    if (s && s.kind === "tape") { const d = D.tapes[s.i]; $("#cap-genre").textContent = d.genre; $("#cap-title").textContent = d.name; $("#cap-tag").textContent = d.tagline; }
+  }
+  const panel = $("#panel"), body = $("#panel-body");
+  function fillPanel(d) {
+    panel.style.setProperty("--bg", d.colors.bg); panel.style.setProperty("--fg", d.colors.fg); panel.style.setProperty("--acc", d.colors.acc);
+    body.replaceChildren(el("p", "p-genre", d.genre + " · Toti Video"), el("h2", "", d.name), el("p", "p-tag", d.tagline), el("p", "p-blurb", d.blurb), el("h3", "", "On this tape"));
+    if (d.works.length) {
+      const ol = el("ol", "works");
+      d.works.forEach(w => {
+        const li = el("li"); li.append(el("b", "", w.title), el("span", "meta", [w.year, w.role].filter(Boolean).join(" · ")), el("p", "", w.text));
+        if (w.link) { const a = el("a", "btn", "▶ Watch"); a.href = w.link; a.target = "_blank"; a.rel = "noopener"; li.append(a); } else li.append(el("span", "out", "Tape checked out — ask at the counter"));
+        ol.append(li);
+      });
+      body.append(ol);
+    }
+    if (d.photos && d.photos.length) {
+      const grid = el("div", "photos");
+      d.photos.forEach(p => { const f = el("figure"), im = new Image(); im.src = p.src; im.alt = p.caption || "Photograph by " + D.owner.name; im.loading = "lazy"; f.append(im, el("figcaption", "", p.caption || "")); grid.append(f); });
+      body.append(grid);
+    } else if (!d.works.length) body.append(el("p", "out", d.empty || ""));
   }
 
-  // ---------- VHS layer, clock, barcode, favicon ----------
-  function vhs() {
-    const cv = $("#noise"), x = cv.getContext("2d"), im = x.createImageData(320, 180), px = new Uint32Array(im.data.buffer);
-    const snow = () => { for (let i = 0; i < px.length; i++) px[i] = Math.random() < .5 ? 0xffffffff : 0xff000000; x.putImageData(im, 0, 0); };
-    snow(); if (!reduce) setInterval(() => fxOn && !document.hidden && snow(), 90);
-    const start = Date.now(), M = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"], p = n => String(n).padStart(2, "0");
-    const tick = () => {
-      const d = new Date(), h = d.getHours(), s = (Date.now() - start) / 1000 | 0;
-      $("#clock").textContent = `${h < 12 ? "AM" : "PM"} ${h % 12 || 12}:${p(d.getMinutes())}  ${M[d.getMonth()]}. ${p(d.getDate())} ${d.getFullYear()}`;
-      $("#counter").textContent = `${s / 3600 | 0}:${p((s / 60 | 0) % 60)}:${p(s % 60)}`;
-    };
-    tick(); setInterval(tick, 1000);
-    const b = $("#fx"); b.onclick = () => { fxOn = !fxOn; document.body.classList.toggle("clean", !fxOn); b.setAttribute("aria-pressed", fxOn); };
+  // ---------- taking a tape off the shelf ----------
+  let out = null;   // { tape, k: flight 0..1, lid: 0..1, dir: 1 opening | -1 closing }
+  function openTape(i) {
+    if (out) return; out = { tape: tapes[i], k: 0, lid: 0, dir: 1 };
+    fillPanel(D.tapes[i]); panel.hidden = false; panel.scrollTop = 0;
+    requestAnimationFrame(() => { panel.classList.add("show"); document.body.classList.add("opened"); });
+    document.documentElement.style.overflow = "hidden"; $("#close").focus({ preventScroll: true });
   }
-  function barcode() {
-    const cv = $("#barcode"), x = cv.getContext("2d"), r = rng(hash("efraimtoti")); x.fillStyle = INK;
-    for (let a = 14; a < cv.width - 14;) { const w = 1 + (r() * 4 | 0); if (r() < .6) x.fillRect(a, 8, w, cv.height - 16); a += w + 1; }
+  function closeTape() {
+    if (!out || out.dir < 0) return; out.dir = -1;
+    panel.classList.remove("show"); document.body.classList.remove("opened"); document.documentElement.style.overflow = "";
+    setTimeout(() => { if (!out) panel.hidden = true; }, 900);
   }
-  function favicon() {
-    const cv = document.createElement("canvas"); cv.width = cv.height = 64; const x = cv.getContext("2d");
-    x.fillStyle = INK; x.fillRect(0, 0, 64, 64); box(x, 5, 15, 54, 34, "#3b2a78", PINK, 3); box(x, 13, 22, 38, 16, CREAM, null);
-    circ(x, 22, 30, 5, INK, null); circ(x, 42, 30, 5, INK, null);
-    const l = document.createElement("link"); l.rel = "icon"; l.href = cv.toDataURL(); document.head.append(l);
-  }
+  $("#open").onclick = () => { const s = stops[active]; if (s && s.kind === "tape") openTape(s.i); };
+  $("#close").onclick = closeTape;
+  addEventListener("keydown", e => { if (e.key === "Escape") closeTape(); });
 
-  $("#yr").textContent = new Date().getFullYear();
-  hero(); shelves(); vhs(); barcode(); favicon();
-})();
+  // pointer: look around, hover, click
+  const ray = new THREE.Raycaster(), ptr = new THREE.Vector2(9, 9); ray.params.Line.threshold = 0;
+  let mx = 0, my = 0, sx = 0, sy = 0, par = 1, hover = -1, downAt = null;
+  const pick = () => {
+    ray.setFromCamera(ptr, camera);
+    for (const h of ray.intersectObjects(tapes, true)) { if (!h.object.isMesh) continue; let o = h.object; while (o && o.userData.i === undefined) o = o.parent; if (o) return o.userData.i; }
+    return -1;
+  };
+  addEventListener("pointermove", e => { mx = e.clientX / innerWidth * 2 - 1; my = e.clientY / innerHeight * 2 - 1; ptr.set(mx, -my); });
+  addEventListener("pointerdown", e => { downAt = [e.clientX, e.clientY]; });
+  addEventListener("pointerup", e => {
+    if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 8 || (e.target.closest && e.target.closest(".ui"))) return;
+    ptr.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight * 2 - 1));
+    if (out) { closeTape(); return; }
+    const i = pick(); if (i < 0) return;
+    const s = stops[active]; if (s && s.kind === "tape" && s.i === i) openTape(i); else document.getElementById(D.tapes[i].id).scrollIntoView();
+  });
+
+  // VHS clock
+  { const t0 = Date.now(), M = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"], p2 = n => String(n).padStart(2, "0");
+    const tick = () => { const d = new Date(), h = d.getHours(), s = (Date.now() - t0) / 1000 | 0;
+      $("#clock").textContent = `${h < 12 ? "AM" : "PM"} ${h % 12 || 12}:${p2(d.getMinutes())}  ${M[d.getMonth()]}. ${p2(d.getDate())} ${d.getFullYear()}`;
+      $("#counter-time").textContent = `${s / 3600 | 0}:${p2((s / 60 | 0) % 60)}:${p2(s % 60)}`; };
+    tick(); setInterval(tick, 1000); }
+
+  // ---------- every frame ----------
+  const clock = new THREE.Clock(), look = V(0, 0, 0), tgt = V(0, 0, 0), tq = new THREE.Quaternion(), q2 = new THREE.Quaternion(), eu = new THREE.Euler(), UP = V(0, 1, 0);
+  let ps = window.scrollY / window.innerHeight, frameN = 0, bx = 60, by = 40, bvx = 1.6, bvy = 1.1;
+  function frame() {
+    requestAnimationFrame(frame);
+    const dt = Math.min(clock.getDelta(), .05), t = clock.elapsedTime; frameN++;
+    const portrait = camera.aspect < .85;
+
+    // camera along the rail
+    const p = clamp(window.scrollY / window.innerHeight, 0, stops.length - 1);
+    ps += (p - ps) * (reduce ? 1 : Math.min(1, dt * 4));
+    const n = Math.min(stops.length - 2, Math.floor(ps)), e = ease(ps - n), A = stops[n], B = stops[n + 1], mid = Math.sin(Math.PI * e);
+    camera.position.lerpVectors(A.p, B.p, e); look.lerpVectors(A.l, B.l, e);
+    if (n >= 1) look.z -= 2.8 * mid;                                          // glance down the aisle while crossing it
+    if (!reduce) camera.position.y += Math.abs(Math.sin(ps * Math.PI * 5)) * .04 * mid;   // footsteps
+    sx += (mx - sx) * .06; sy += (my - sy) * .06; par += ((out ? 0 : 1) - par) * .08;
+    camera.lookAt(look); camera.rotateY(-sx * .1 * par); camera.rotateX(-sy * .06 * par); camera.updateMatrixWorld();
+    setActive(Math.abs(ps - Math.round(ps)) < .3 ? Math.round(ps) : -1);
+
+    // doors, neon, fans, signs, balloons, robot, dust, TV
+    const door = ease(clamp((ps - .2) / .45)); doorL.position.x = -.45 - .9 * door; doorR.position.x = .45 + .9 * door;
+    signMat.color.setScalar(!reduce && (Math.sin(t * 9) > .95 || Math.sin(t * 1.3) > .985) ? .45 : 1);
+    if (!reduce) {
+      fans.forEach((f, k) => f.rotation.y += dt * (3 + k));
+      signs.forEach((s, k) => s.rotation.z = Math.sin(t * 1.4 + k * 1.7) * .06);
+      balloons.forEach((b, k) => { b.position.y = 2.5 + k * .22 + Math.sin(t * 1.2 + k) * .08; b.rotation.z = Math.sin(t * .9 + k * 2) * .08; });
+      const rx = Math.sin(t * .31) * 1.1, rz = -8.5 + Math.sin(t * .17) * 5.5, dx = Math.cos(t * .31) * .31 * 1.1, dz = Math.cos(t * .17) * .17 * 5.5;
+      bot.position.set(rx, 0, rz); bot.rotation.y = Math.atan2(dx, dz);
+      for (let i = 0; i < dustN; i++) { dustA[i * 3 + 1] += dt * (.04 + (i % 7) * .012); dustA[i * 3] += Math.sin(t + i) * dt * .03; if (dustA[i * 3 + 1] > 4.1) dustA[i * 3 + 1] = 0; }
+      dustGeo.attributes.position.needsUpdate = true;
+    }
+    if (frameN % 4 === 0) {
+      [CREAM, YEL, SKY, GREEN, ORANGE, RED, BLUE].forEach((c, i) => { tvG.fillStyle = c; tvG.fillRect(i * 37, 0, 37, 192); });
+      bx += bvx * 4; by += bvy * 4; if (bx < 0 || bx > 136) bvx *= -1; if (by < 0 || by > 142) bvy *= -1;
+      tvG.fillStyle = INK; tvG.fillRect(bx, by, 120, 50); tvG.fillStyle = YEL; tvG.font = "34px VT323, monospace"; tvG.textBaseline = "middle"; tvG.textAlign = "center"; tvG.fillText("TOTI TV", bx + 60, by + 26);
+      tvG.fillStyle = "rgba(255,255,255,.25)"; tvG.fillRect(0, (t * 60) % 192, 256, 6); tvTex.needsUpdate = true;
+    }
+
+    // tapes on the shelf: the one you're facing rocks, the one under the pointer grows
+    if (frameN % 3 === 0 && !out && matchMedia("(hover: hover)").matches) { hover = pick(); document.body.style.cursor = hover >= 0 ? "pointer" : ""; }
+    const facing = stops[active] && stops[active].kind === "tape" ? stops[active].i : -1;
+    tapes.forEach((g, i) => {
+      const u = g.userData; if (out && out.tape === g) return;
+      const s = spot(i).s, on = i === facing || i === hover;
+      u.grow += ((i === hover ? 1.1 : 1) - u.grow) * .15; g.scale.setScalar(u.grow);
+      g.position.copy(u.home); g.rotation.set(0, -s * Math.PI / 2, 0);
+      if (on && !reduce) { g.position.y += Math.sin(t * 2.4) * .015 + .01; g.position.x -= s * .06; g.rotation.y += Math.sin(t * 1.7) * .16; g.rotation.z = Math.sin(t * 2.1) * .03; }
+    });
+
+    // the tape in your hands
+    if (out) {
+      const g = out.tape, u = g.userData;
+      if (out.dir > 0) { out.k = clamp(out.k + dt / .9); if (out.k === 1) out.lid = clamp(out.lid + dt / .7); }
+      else { out.lid = clamp(out.lid - dt / .35); if (out.lid === 0) out.k = clamp(out.k - dt / .7); }
+      if (reduce) { out.k = out.lid = out.dir > 0 ? 1 : 0; }
+      const k = ease(out.k), lid = ease(out.lid);
+      tgt.set(portrait ? 0 : -.5, portrait ? .62 : 0, portrait ? -1.75 : -1.35); camera.localToWorld(tgt);
+      eu.set(reduce ? 0 : Math.sin(t * 1.1) * .05, .3 * lid + (reduce ? 0 : Math.sin(t * .8) * .07), 0);
+      tq.copy(camera.quaternion).multiply(q2.setFromEuler(eu));
+      g.position.lerpVectors(u.home, tgt, k); g.position.y += Math.sin(Math.PI * k) * .25;
+      g.quaternion.slerpQuaternions(u.homeQ, tq, k).multiply(q2.setFromAxisAngle(UP, Math.PI * 2 * k));
+      g.scale.setScalar(1);
+      u.pivot.rotation.y = -2.35 * lid;
+      const c = ease(clamp((out.lid - .45) / .55)); u.cas.visible = out.lid > .3;
+      u.cas.position.set(0, -.02 + .04 * c, .03 + .2 * c); u.cas.rotation.z = (1 - c) * .5; u.cas.scale.setScalar(.7 + .3 * c);
+      u.reels.forEach(r => r.rotation.y += dt * 4);
+      if (out.dir < 0 && out.k === 0) { u.cas.visible = false; u.pivot.rotation.y = 0; out = null; }
+    }
+    renderer.render(scene, camera);
+  }
+  frame();
+}
