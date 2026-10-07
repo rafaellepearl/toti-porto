@@ -6,6 +6,7 @@ const D = window.DATA, $ = s => document.querySelector(s);
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const rng = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+const SHOP = "EFRAIM VIDEO";   // the name on the sign, the cassette and the TV
 const DISP = '"Bowlby One", Impact, sans-serif', OSD = "VT323, monospace";
 
 // drawing helpers: flat fill + one even ink line
@@ -75,10 +76,12 @@ let doorOpen = 0, redrawScene = () => {};
     rect(x, cx - dw / 2 - o, dy, dw / 2, dh, SKY, 3); rect(x, cx + o, dy, dw / 2, dh, SKY, 3); hatch(x, cx - dw / 2 - o, dy, dw * .3, dh * .5, 7, 1);
     x.restore(); rect(x, cx - dw / 2, dy, dw, dh, null, 4);
     x.font = `${bw * .05}px ${OSD}`; x.textAlign = "center"; x.textBaseline = "middle"; x.fillStyle = reduce || Math.sin(t * 1.6) > -.5 ? YEL : "#7a4a3a"; x.fillText("OPEN", cx, by + bh * .225);
-    const sw = bw * .74, shh = bw * .15, sx = cx - sw / 2, sy = by - bw * .03 - shh - bw * .025;
+    const sw = bw * .82, shh = bw * .15, sx = cx - sw / 2, sy = by - bw * .03 - shh - bw * .025;
     line(x, sx + sw * .15, sy + shh, sx + sw * .15, by, INK, 5); line(x, sx + sw * .85, sy + shh, sx + sw * .85, by, INK, 5);
     rect(x, sx, sy, sw, shh, INK, 4); x.strokeStyle = YEL; x.globalAlpha = flick; x.lineWidth = 2; x.strokeRect(sx + 6, sy + 6, sw - 12, shh - 12);
-    x.font = `${shh * .6}px ${DISP}`; x.fillStyle = YEL; x.fillText("EFRAIM VIDEO", cx, sy + shh * .55); x.globalAlpha = 1;
+    // the sign lettering shrinks to fit the board, whatever the name or font
+    let fz = shh * .6; x.font = `${fz}px ${DISP}`; const tw = x.measureText(SHOP).width; if (tw > sw - 36) { fz *= (sw - 36) / tw; x.font = `${fz}px ${DISP}`; }
+    x.fillStyle = YEL; x.fillText(SHOP, cx, sy + shh * .55); x.globalAlpha = 1;
     const lx = wide ? bx + bw * 1.12 : bx - bw * .06, lh = bh * 1.5;
     if (lx > 16 && lx < W - 16) { line(x, lx, base + 18, lx, base - lh, INK, 6); line(x, lx, base - lh, lx - bw * .06, base - lh, INK, 6); rect(x, lx - bw * .09, base - lh, bw * .05, 8, YEL, 2.5); }
     // a customer on the way in, shifting from foot to foot
@@ -214,7 +217,7 @@ addEventListener("keydown", e => { if (document.body.dataset.place !== "inside" 
     line(x, 150, 44, 110, 6, INK, 4); line(x, 200, 44, 250, 10, INK, 4); circ(x, 110, 6, 5, RED, 2.5); circ(x, 250, 10, 5, RED, 2.5);
     rect(x, 20, 44, 320, 220, ORANGE, 4); hatch(x, 20, 230, 320, 34, 7); rect(x, 40, 264, 30, 22, INK, 0); rect(x, 290, 264, 30, 22, INK, 0);
     const sh = reduce ? 0 : Math.floor(t * 1.5) % 7; BARS.forEach((c, i) => rect(x, 40 + i * 30, 64, 30, 150, BARS[(i + sh) % 7], 0));
-    rect(x, 40, 176, 210, 38, INK, 0); x.font = `34px ${OSD}`; x.textAlign = "left"; x.textBaseline = "middle"; x.fillStyle = YEL; x.fillText("TOTI TV", 50, 196);
+    rect(x, 40, 176, 210, 38, INK, 0); x.font = `34px ${OSD}`; x.textAlign = "left"; x.textBaseline = "middle"; x.fillStyle = YEL; x.fillText("EFRAIM TV", 48, 196, 160);
     if (reduce || Math.floor(t * 1.2) % 2) { x.fillStyle = CREAM; x.fillText("▶", 216, 196); }
     if (!reduce) rect(x, 40, 64 + (t * 26) % 144, 210, 5, "rgba(255,255,255,.4)", 0);
     rect(x, 40, 64, 210, 150, null, 4);
@@ -237,7 +240,7 @@ function drawCassette(d, t) {
     for (let i = 0; i < 3; i++) { const g = t * 1.6 * dir + i * 2.094; line(x, a, 121, a + Math.cos(g) * 16, 121 + Math.sin(g) * 16, INK, 3); }
     circ(x, a, 121, 4, INK, 0);
   });
-  [YEL, RED, BLUE].forEach((c, i) => rect(x, 28 + i * 22, 170, 22, 10, c, 0)); x.font = `18px ${OSD}`; x.textAlign = "right"; x.fillStyle = CREAM; x.fillText("EFRAIM VIDEO · E-180", 292, 176);
+  [YEL, RED, BLUE].forEach((c, i) => rect(x, 28 + i * 22, 170, 22, 10, c, 0)); x.font = `18px ${OSD}`; x.textAlign = "right"; x.fillStyle = CREAM; x.fillText(SHOP + " · E-180", 292, 176, 190);
 }
 function openTape(d, btn) {
   // the tape leaves the shelf: a copy of its cover flies to the middle of the screen, turning once, then the box opens
@@ -267,7 +270,7 @@ function showBox(d) {
       const yt = w.link && w.link.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([\w-]{11})/);
       if (yt) {   // the video's own thumbnail; on a web server a click plays it in place, otherwise it opens YouTube
         const t = el("a", "thumb"); t.href = w.link; t.target = "_blank"; t.rel = "noopener"; t.setAttribute("aria-label", "Play " + w.title);
-        const im = new Image(); im.src = "https://i.ytimg.com/vi/" + yt[1] + "/hqdefault.jpg"; im.alt = ""; im.loading = "lazy"; t.append(im, el("span", "play", "▶"));
+        const im = new Image(); im.onerror = () => { im.onerror = null; im.src = "https://i.ytimg.com/vi/" + yt[1] + "/hqdefault.jpg"; }; im.src = w.thumb || "https://i.ytimg.com/vi/" + yt[1] + "/maxresdefault.jpg"; im.alt = ""; im.loading = "lazy"; t.append(im, el("span", "play", "▶"));
         t.onclick = e => { if (!location.protocol.startsWith("http")) return; e.preventDefault();
           const f = el("iframe", "yt"); f.src = "https://www.youtube-nocookie.com/embed/" + yt[1] + "?autoplay=1"; f.title = w.title; f.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen"; f.allowFullscreen = true; t.replaceWith(f); };
         li.append(t);

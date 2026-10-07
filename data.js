@@ -57,10 +57,10 @@ window.DATA = {
       blurb: "The story walked in at midnight, wanting to stay hidden. They always do. So he worked the case the long way round: deep-dive investigative research, on-camera interviews that land, a producing workflow with more moving parts than a getaway, and cinematic videography cut for digital platforms. One video journalist. Start to finish.",
       works: [
         /* MyCity (2023) — YouTube links play right inside the panel */
-        { title: "Warga Rawajati Menanti Hak Ganti Rugi", year: "MyCity, 2023", role: "Video Journalist", text: "Case file one: the residents of Rawajati, still waiting on their compensation.", link: "https://www.youtube.com/watch?v=hIDxomO71x4" },
-        { title: "TMII Revitalisasi, Harga Tiket Naik?", year: "MyCity, 2023", role: "Video Journalist", text: "Case file two: a landmark gets a facelift. Who pays at the gate?", link: "https://www.youtube.com/watch?v=r3LiTAobyFw" },
-        { title: "Sisi Lain Pemakaman di TPU Pondok Ranggon", year: "MyCity, 2023", role: "Video Journalist", text: "Case file three: the other side of the Pondok Ranggon cemetery.", link: "https://www.youtube.com/watch?v=6GSwfCcAyZ4" },
-        { title: "Perbedaan Makanan Organik dan Anorganik", year: "MyCity, 2023", role: "Video Journalist", text: "Case file four: organic versus non-organic food, examined.", link: "https://www.youtube.com/watch?v=soT2KIvABYc" }
+        { title: "Warga Rawajati Menanti Hak Ganti Rugi", year: "MyCity, 2023", role: "Video Journalist", text: "Case file one: the residents of Rawajati, still waiting on their compensation.", link: "https://www.youtube.com/watch?v=hIDxomO71x4", thumb: "https://i.ytimg.com/vi/hIDxomO71x4/maxresdefault.jpg" },
+        { title: "TMII Revitalisasi, Harga Tiket Naik?", year: "MyCity, 2023", role: "Video Journalist", text: "Case file two: a landmark gets a facelift. Who pays at the gate?", link: "https://www.youtube.com/watch?v=r3LiTAobyFw", thumb: "https://i.ytimg.com/vi/r3LiTAobyFw/maxresdefault.jpg" },
+        { title: "Sisi Lain Pemakaman di TPU Pondok Ranggon", year: "MyCity, 2023", role: "Video Journalist", text: "Case file three: the other side of the Pondok Ranggon cemetery.", link: "https://www.youtube.com/watch?v=6GSwfCcAyZ4", thumb: "https://i.ytimg.com/vi/6GSwfCcAyZ4/maxresdefault.jpg" },
+        { title: "Perbedaan Makanan Organik dan Anorganik", year: "MyCity, 2023", role: "Video Journalist", text: "Case file four: organic versus non-organic food, examined.", link: "https://www.youtube.com/watch?v=soT2KIvABYc", thumb: "https://i.ytimg.com/vi/soT2KIvABYc/maxresdefault.jpg" }
       ]
     },
     {
