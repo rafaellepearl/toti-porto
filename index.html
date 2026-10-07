@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Efraim Toti — Toti Video</title>
+<meta name="description" content="Efraim Toti — directing, writing, editing, producing, photography and videography. Browse the shelves.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Space+Mono:wght@400;700&family=VT323&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- VHS layer -->
+<div class="vhs" aria-hidden="true">
+  <canvas id="noise" width="320" height="180"></canvas>
+  <div class="scan"></div>
+  <div class="track"></div>
+  <div class="vig"></div>
+</div>
+<div class="osd osd-tl" aria-hidden="true">PLAY &#9654;</div>
+<div class="osd osd-bl" aria-hidden="true"><span id="clock"></span></div>
+<div class="osd osd-br" aria-hidden="true">SP &nbsp;<span id="counter">0:00:00</span></div>
+
+<nav class="nav" aria-label="Store directory">
+  <a class="logo" href="#top">TOTI VIDEO</a>
+  <div class="links">
+    <a href="#films">Films</a>
+    <a href="#docs">Docs</a>
+    <a href="#tv">TV</a>
+    <a href="#live">Live</a>
+    <a href="#commercial">Commercial</a>
+    <a href="#photos">Photos</a>
+    <a href="#contact">Counter</a>
+  </div>
+  <button id="fx" type="button" aria-pressed="true" title="Toggle VHS effects">TRACKING</button>
+</nav>
+
+<header class="hero" id="top">
+  <canvas id="scene" role="img" aria-label="A video rental store glowing in a desert parking lot at night"></canvas>
+  <div class="hero-text">
+    <p class="kicker">Open late &middot; Every night</p>
+    <h1>Efraim<br>Toti</h1>
+    <p class="roles">Directing / Writing / Editing / Producing / Photography / Videography</p>
+    <a class="btn" href="#films">Enter the store &#9654;</a>
+  </div>
+</header>
+
+<main>
+  <section class="about">
+    <div class="pick">
+      <span class="pick-tab">About the owner</span>
+      <p>Efraim Toti is a filmmaker and video journalist from Indonesia. He writes, directs, edits and produces &mdash; from short films screened at the National Gallery of Indonesia to broadcast and digital content at ANTV.</p>
+      <p class="small">Every tape on these shelves is his work. Pick one up and flip it over.</p>
+    </div>
+  </section>
+
+  <div id="aisles"></div>
+
+  <section class="aisle" id="photos">
+    <div class="sign"><span>Aisle 06 &middot; Stills</span><h2>Photography</h2></div>
+    <div id="photo-wall" class="photo-wall"></div>
+  </section>
+
+  <section class="counter" id="contact">
+    <div class="sign"><span>Front counter</span><h2>Get a membership</h2></div>
+    <div class="card">
+      <div class="card-top"><b>TOTI VIDEO</b><span>MEMBER CARD</span></div>
+      <p class="card-name">Efraim Toti</p>
+      <p class="card-line"><a href="mailto:efraimtoti@gmail.com">efraimtoti@gmail.com</a></p>
+      <p class="card-line"><a href="tel:+6281211368646">+62 812 1136 8646</a></p>
+      <canvas id="barcode" width="520" height="70" aria-hidden="true"></canvas>
+      <p class="card-foot">No late fees. Available for directing, writing, editing and producing work.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <p>Be kind, rewind.</p>
+  <p class="small">&copy; <span id="yr"></span> Efraim Toti &middot; All artwork on this site is drawn by code.</p>
+</footer>
+
+<dialog id="box" aria-labelledby="box-title">
+  <button class="eject" type="button" id="eject">EJECT &#9167;</button>
+  <div class="box-in">
+    <canvas id="box-cover" aria-hidden="true"></canvas>
+    <div class="back">
+      <p class="back-tag" id="box-tag"></p>
+      <h3 id="box-title"></h3>
+      <p class="back-role" id="box-role"></p>
+      <p id="box-blurb"></p>
+      <p class="back-notes" id="box-notes"></p>
+      <a class="btn" id="box-link" target="_blank" rel="noopener">&#9654; Watch here</a>
+      <p class="back-out" id="box-out">Tape currently checked out &mdash; ask at the counter for a copy.</p>
+    </div>
+  </div>
+</dialog>
+
+<script src="data.js"></script>
+<script src="main.js"></script>
+</body>
+</html>
