@@ -4,82 +4,65 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Efraim Toti — Toti Video</title>
-<meta name="description" content="Efraim Toti — directing, writing, editing, producing, photography and videography. Walk into the video store and pull a tape off the shelf.">
+<meta name="description" content="Efraim Toti — directing, writing, editing, producing, photography and videography. Step into the video store and pull a tape off the shelf.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bowlby+One&family=Comic+Neue:wght@700&family=Space+Mono:wght@400;700&family=VT323&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bowlby+One&family=Comic+Neue:wght@700&family=Space+Mono&family=VT323&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
-<!-- three.js is the only library. To host it yourself, download this file into /vendor and point the line below at it. -->
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js" } }</script>
 </head>
-<body data-stop="hero">
+<body>
 
-<canvas id="gl" aria-hidden="true"></canvas>
-
-<!-- VHS layer -->
-<div class="vhs" aria-hidden="true"><div class="scan"></div><div class="track"></div></div>
+<div class="scan" aria-hidden="true"></div>
 <div class="osd osd-tl" aria-hidden="true">PLAY &#9654;</div>
 <div class="osd osd-bl" aria-hidden="true"><span id="clock"></span></div>
-<div class="osd osd-br" aria-hidden="true">SP <span id="counter-time">0:00:00</span></div>
 
-<a class="logo ui" href="#top">TOTI VIDEO</a>
-<nav id="dots" class="ui" aria-label="Shelves"></nav>
-
-<!-- heads-up text for each stop on the walk -->
-<header id="hero" class="hud">
-  <p class="kicker">Open late &middot; every night</p>
-  <h1 id="h-name"></h1>
-  <p class="roles" id="h-roles"></p>
-  <a class="btn ui" href="#enter">Walk in &#9660;</a>
+<header class="hero" id="top">
+  <canvas id="scene" role="img" aria-label="Drawing of a video rental store at night, its windows lit, mesas on the horizon"></canvas>
+  <div class="hero-text">
+    <p class="kicker">Open late &middot; every night</p>
+    <h1 id="h-name"></h1>
+    <p class="roles" id="h-roles"></p>
+    <a class="btn" href="#store">Walk in &#9660;</a>
+  </div>
 </header>
 
-<div id="welcome" class="hud card">
-  <p class="chip">Welcome in</p>
-  <p class="big">Seven tapes behind the counter. Every one is his work, dressed up as a different kind of movie.</p>
-  <p class="small">Scroll to pick a tape &middot; click it to take it off the shelf</p>
-</div>
+<main>
+  <section id="store">
+    <div class="caption">
+      <span class="chip">Inside</span>
+      <h2>Pick a tape</h2>
+      <p>Seven tapes, face-out on the shelves. Every one is his work, dressed up as a different kind of movie. Click one to open the box.</p>
+    </div>
+    <div id="lemari" class="lemari"></div>
+  </section>
 
-<div id="cap" class="hud card ui">
-  <p class="chip" id="cap-genre"></p>
-  <h2 id="cap-title"></h2>
-  <p id="cap-tag"></p>
-  <button class="btn" id="open" type="button">&#9654; Open the tape</button>
-</div>
+  <section id="counter">
+    <canvas id="tv" width="360" height="300" role="img" aria-label="Drawing of a small television showing a test card"></canvas>
+    <div class="caption card">
+      <span class="chip">Front counter</span>
+      <h2>Rent the director</h2>
+      <p id="c-roles"></p>
+      <p class="line"><a id="c-mail"></a></p>
+      <p class="line"><a id="c-tel"></a></p>
+      <p class="small">No late fees. Be kind, rewind.</p>
+    </div>
+  </section>
+</main>
 
-<div id="counter" class="hud card ui">
-  <p class="chip">Front counter</p>
-  <h2>Rent the director</h2>
-  <p id="c-roles"></p>
-  <p class="line"><a id="c-mail"></a></p>
-  <p class="line"><a id="c-tel"></a></p>
-  <p class="small">No late fees. Be kind, rewind.</p>
-</div>
+<footer><p>Be kind, rewind.</p><p class="small">&copy; <span id="yr"></span> Efraim Toti &middot; every drawing on this site is made by code.</p></footer>
 
-<!-- an opened tape -->
-<aside id="panel" class="ui" aria-live="polite" hidden>
+<dialog id="box" aria-labelledby="box-title">
   <button id="close" type="button">&#9167; Eject</button>
-  <div id="panel-body"></div>
-</aside>
-
-<main id="stops"></main>
-
-<!-- plain version: for screen readers, and shown if 3D can't start -->
-<section id="fallback"></section>
+  <div class="box-in">
+    <div class="box-art">
+      <canvas id="box-cover" aria-hidden="true"></canvas>
+      <canvas id="cassette" width="320" height="200" aria-hidden="true"></canvas>
+    </div>
+    <div id="panel-body"></div>
+  </div>
+</dialog>
 
 <script src="data.js"></script>
-<script>
-  // plain-HTML copy of everything on the shelves
-  (function () {
-    var D = window.DATA, f = document.getElementById("fallback"), h = "<h1>" + D.owner.name + "</h1><p>" + D.owner.roles + "</p>";
-    D.tapes.forEach(function (t) {
-      h += "<h2>" + t.name + "</h2><p>" + t.tagline + "</p><p>" + t.blurb + "</p><ul>";
-      t.works.forEach(function (w) { h += "<li><b>" + w.title + "</b>" + (w.year ? " (" + w.year + ")" : "") + " — " + w.role + ". " + w.text + (w.link ? ' <a href="' + w.link + '" target="_blank" rel="noopener">Watch</a>' : "") + "</li>"; });
-      h += "</ul>" + (t.works.length ? "" : "<p>" + (t.empty || "") + "</p>");
-    });
-    h += '<h2>Contact</h2><p><a href="mailto:' + D.owner.email + '">' + D.owner.email + '</a> · <a href="tel:' + D.owner.tel + '">' + D.owner.phone + "</a></p>";
-    f.innerHTML = h;
-  })();
-</script>
-<script type="module" src="main.js" onerror="document.body.classList.add('no3d')"></script>
+<script type="module" src="main.js"></script>
 </body>
 </html>

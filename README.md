@@ -1,14 +1,13 @@
 # Toti Video — Efraim Toti's portfolio
 
-A static site with no build step. You walk into a 3D video store (three.js), pull a tape off the shelf and open it. All artwork is painted by JavaScript on canvas — there are no image files.
+A static site with no build step. A drawn video store: the storefront at night, then shelves of tapes you can open. All artwork is painted by JavaScript on canvas — there are no image files.
 
 ## Files
 - `index.html`, `style.css` — page shell and the text overlays
 - `data.js` — **all the content**: one entry per tape (title, genre, tagline, blurb, works, links)
 - `covers.js` — the cover paintings, one function per genre
-- `main.js` — the 3D store, camera walk and tape animation
+- `main.js` — the drawn storefront, the shelves, and the opened-tape view (all 2D canvas, no libraries)
 
-three.js is loaded from the jsDelivr CDN (see the `importmap` line in `index.html`).
 
 ## Preview on your computer
 Opening `index.html` by double-click will not work (browsers block modules on `file://`). Run a local server in this folder instead:
