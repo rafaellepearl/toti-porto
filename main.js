@@ -162,6 +162,10 @@ const stations = [];   // places the arrows and dots stop at
   // the counter
   put(Lmain, "div", "counter inkbox", 2960, 470, 660, 170, "BE KIND · REWIND"); put(Lmain, "div", "slab inkbox", 2948, 452, 684, 22);
   const tv = put(Lmain, "canvas", "", 2990, 286, 200, 167); tv.id = "tv"; tv.width = 360; tv.height = 300;
+  if (D.owner.tv) {   // the TV is a button: click it and the video plays on a big set
+    const b = put(Lmain, "button", "tvbtn", 2990, 286, 200, 167); b.type = "button"; b.setAttribute("aria-label", "Watch the video on Efraim TV"); b.onclick = () => { if (!dragged) openTV(); };
+    b.append(el("span", "hint", "Click the TV"));
+  }
   put(Lmain, "div", "reg inkbox", 3470, 398, 120, 56);
   const note = put(Lmain, "div", "notice inkbox", 3230, 140, 330, null);
   note.innerHTML = `<span class="chip">Front counter</span><h2>Rent the director</h2><p>${D.owner.roles}</p><p class="line"><a href="mailto:${D.owner.email}">${D.owner.email}</a></p><p class="line"><a href="tel:${D.owner.tel}">${D.owner.phone}</a></p><p class="small">No late fees. &copy; ${new Date().getFullYear()} ${D.owner.name}</p>`;
@@ -210,6 +214,17 @@ addEventListener("keydown", e => { if (document.body.dataset.place !== "inside" 
 })();
 
 // ---------- the counter TV ----------
+const tvbox = $("#tvbox"), tvscreen = $("#tvscreen");
+function openTV() {
+  const u = D.owner.tv, dr = u.match(/drive\.google\.com\/file\/d\/([\w-]+)/), yt = u.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{11})/);
+  const src = dr ? "https://drive.google.com/file/d/" + dr[1] + "/preview" : yt ? "https://www.youtube-nocookie.com/embed/" + yt[1] + "?autoplay=1" : u;
+  const f = el("iframe"); f.src = src; f.title = "Efraim TV"; f.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen"; f.allowFullscreen = true;
+  const a = el("a", "btn", "Open in a new tab"); a.href = u; a.target = "_blank"; a.rel = "noopener";
+  tvscreen.replaceChildren(f); tvbox.querySelector(".tvknobs b").replaceChildren(a); tvbox.showModal();
+}
+tvbox.addEventListener("close", () => tvscreen.replaceChildren());   // taking the player out stops the sound
+$("#tvclose").onclick = () => tvbox.close();
+tvbox.addEventListener("click", e => { if (e.target === tvbox) tvbox.close(); });
 {
   const cv = $("#tv"), x = cv.getContext("2d"), BARS = [CREAM, YEL, SKY, GREEN, ORANGE, RED, BLUE];
   const draw = t => {

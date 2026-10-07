@@ -15,7 +15,9 @@ window.DATA = {
     roles: "Directing / Writing / Editing / Producing / Photography / Videography",
     email: "efraimtoti@gmail.com",
     phone: "+62 812 1136 8646",
-    tel: "+6281211368646"
+    tel: "+6281211368646",
+    /* the video that plays on the counter TV — a Google Drive or YouTube link */
+    tv: "https://drive.google.com/file/d/1Z7B2I29eLfbIvg7xPiFORPBBFPgCaNG6/view?usp=sharing"
   },
 
   tapes: [
