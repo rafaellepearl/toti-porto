@@ -33,34 +33,3 @@ It is a plain static site: no build step, no libraries. Every drawing — the st
 | Livestream | Sci-fi | Six live broadcasts for ANTV |
 | Producing Work | Heist | Lazada Logistic and Citra Indah City commercials |
 | Photography | Art house | Photographs |
-
-## Files
-
-- `index.html`, `style.css` — the page shell and all styling and animation
-- `data.js` — **all the content**: one entry per tape (title, genre, tagline, blurb, works, links, photos)
-- `covers.js` — the cover paintings, one function per genre
-- `main.js` — the storefront, the walk-in, the sliding room and the opened-tape view
-- `photos/` — the photographs shown on the Photography tape
-- `screenshots/` — the pictures in this README
-
-## Editing the content
-
-Everything on the shelves lives in `data.js`.
-
-- **Change a project or link:** edit its entry under the right tape. A YouTube `link` gets a thumbnail automatically; set `thumb` to use a different image.
-- **Add photos:** put the files in `photos/` and add a line under `photos` in the Photography tape.
-- **Change contact details:** edit `owner` at the top.
-
-## Preview on your computer
-
-Double-click `index.html`. It opens straight from the folder; no server is needed.
-
-## Deploy on GitHub Pages
-
-1. Create a repository and upload every file and folder here to its root (including `.nojekyll`).
-2. Repository **Settings → Pages → Build and deployment**: Source = *Deploy from a branch*, Branch = `main`, folder = `/ (root)`.
-3. The site appears at `https://<username>.github.io/<repo>/` after a minute or two.
-
-## Accessibility
-
-Every tape, the door and the navigation are real buttons and work from the keyboard. If the visitor's device is set to reduce motion, the animations are switched off and the walk-in becomes a simple cut.
