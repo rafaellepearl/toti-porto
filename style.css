@@ -22,6 +22,7 @@ body[data-place=outside] #outside,body[data-place=inside] #inside{visibility:vis
 #outside{background:#1b2f6b}
 #zoomer{position:absolute;inset:0;will-change:transform}
 #zoomer.go{transition:transform 1.15s cubic-bezier(.55,0,.85,.35);transform:scale(9)}
+#zoomer.out{transition:transform 1s cubic-bezier(.2,.7,.3,1)}
 #scene{position:absolute;inset:0;width:100%;height:100%;display:block}
 #door{position:absolute;background:none;border:0;padding:0;cursor:pointer}
 #door .ring{position:absolute;left:50%;top:50%;width:70px;height:70px;margin:-35px;border:5px solid var(--yel);border-radius:50%;animation:ring 1.6s ease-out infinite}
@@ -41,6 +42,8 @@ h1{font-family:var(--disp);font-weight:400;font-size:clamp(3rem,10vw,7.5rem);lin
 #inside{background:var(--wall);touch-action:none;cursor:grab}
 #inside.arrive{animation:arrive .9s cubic-bezier(.15,.8,.3,1)}
 @keyframes arrive{from{transform:scale(1.5);opacity:.2}}
+#inside.leaving{animation:walkout .65s cubic-bezier(.6,0,.9,.5) forwards}
+@keyframes walkout{to{transform:scale(1.5);opacity:.2}}
 #stage{position:absolute;left:0;top:0;height:800px;transform:scale(var(--s,1));transform-origin:0 0}
 .layer{position:absolute;left:0;top:0;height:800px;will-change:transform}
 .layer>*{position:absolute}

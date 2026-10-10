@@ -120,8 +120,27 @@ function enter() {
   requestAnimationFrame(slide);
 }
 function leave() {
-  if (busy) return; busy = true; veil.classList.add("on");
-  setTimeout(() => { document.body.dataset.place = "outside"; veil.classList.remove("on"); busy = false; $("#walk").focus(); }, reduce ? 0 : 400);
+  if (busy) return; busy = true;
+  const door = $("#door"), settle = () => { busy = false; outside.classList.remove("entering"); $("#walk").focus({ preventScroll: true }); };
+  if (reduce) { document.body.dataset.place = "outside"; doorOpen = 0; redrawScene(); return settle(); }
+  inside.classList.add("leaving");                                   // 1. walk toward the exit
+  setTimeout(() => veil.classList.add("on"), 300);                   // 2. into the light
+  setTimeout(() => {                                                 // 3. step out onto the street, doors still open
+    document.body.dataset.place = "outside"; inside.classList.remove("leaving");
+    doorOpen = 1; outside.classList.add("entering"); redrawScene();
+    zoomer.style.transformOrigin = `${door.dataset.cx}px ${door.dataset.cy}px`;
+    zoomer.style.transition = "none"; zoomer.classList.add("go"); void zoomer.offsetWidth;
+    zoomer.style.transition = ""; zoomer.classList.add("out"); zoomer.classList.remove("go");   // 4. pull back from the doorway
+    veil.classList.remove("on");
+    setTimeout(() => {                                               // 5. the doors slide shut behind you
+      const t0 = performance.now(), shut = now => {
+        doorOpen = Math.max(0, 1 - (now - t0) / 450); redrawScene();
+        if (doorOpen > 0) return requestAnimationFrame(shut);
+        zoomer.classList.remove("out"); settle();
+      };
+      requestAnimationFrame(shut);
+    }, 800);
+  }, 650);
 }
 $("#door").onclick = enter; $("#walk").onclick = enter;
 
