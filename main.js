@@ -229,8 +229,9 @@ function openTV() {
   tvscreen.replaceChildren(f); tvbox.querySelector(".tvknobs b").replaceChildren(a); tvbox.showModal();
 }
 tvbox.addEventListener("close", () => tvscreen.replaceChildren());   // taking the player out stops the sound
-$("#tvclose").onclick = () => tvbox.close();
-tvbox.addEventListener("click", e => { if (e.target === tvbox) tvbox.close(); });
+$("#tvclose").onclick = () => shrinkAway(tvbox);
+tvbox.addEventListener("click", e => { if (e.target === tvbox) shrinkAway(tvbox); });
+tvbox.addEventListener("cancel", e => { e.preventDefault(); shrinkAway(tvbox); });   // Esc
 {
   const cv = $("#tv"), x = cv.getContext("2d"), BARS = [CREAM, YEL, SKY, GREEN, ORANGE, RED, BLUE];
   const draw = t => {
@@ -263,7 +264,9 @@ function drawCassette(d, t) {
   });
   [YEL, RED, BLUE].forEach((c, i) => rect(x, 28 + i * 22, 170, 22, 10, c, 0)); x.font = `18px ${OSD}`; x.textAlign = "right"; x.fillStyle = CREAM; x.fillText(SHOP + " · E-180", 292, 176, 190);
 }
+let shelfBtn = null;   // the tape on the shelf that the open box came from
 function openTape(d, btn) {
+  shelfBtn = btn;
   // the tape leaves the shelf: a copy of its cover flies to the middle of the screen, turning once, then the box opens
   const src = btn && btn.querySelector("canvas");
   if (src && !reduce && src.animate) {
@@ -283,11 +286,17 @@ function showBox(d) {
   dlg.style.setProperty("--bg", d.colors.bg); dlg.style.setProperty("--fg", d.colors.fg); dlg.style.setProperty("--acc", d.colors.acc);
   paintCover($("#box-cover"), d);
   const h2 = el("h2", "", d.name); h2.id = "box-title";
-  body.replaceChildren(el("p", "p-genre", d.genre + " · Efraim Video"), h2, el("p", "p-tag", d.tagline), el("p", "p-blurb", d.blurb), el("h3", "", "On this tape"));
+  body.replaceChildren(el("p", "p-genre", d.genre + " · Efraim Video"), h2, el("p", "p-tag", d.tagline), el("p", "p-blurb", d.blurb));
+  if (d.cta) { const a = el("a", "btn cta", d.cta.label); a.href = d.cta.href; a.target = "_blank"; a.rel = "noopener"; body.append(el("p", "p-cta")); body.lastChild.append(a); }
+  body.append(el("h3", "", "On this tape"));
   if (d.works.length) {
     const ol = el("ol", "works");
     d.works.forEach(w => {
       const li = el("li"); li.append(el("b", "", w.title), el("span", "meta", [w.year, w.role].filter(Boolean).join(" · ")), el("p", "", w.text));
+      if (w.image) {   // a poster or thumbnail that goes with the work
+        const im = new Image(); im.src = w.image; im.alt = w.imageAlt || w.title; im.loading = "lazy";
+        im.className = "still" + (w.imageShape === "poster" ? " still-poster" : ""); li.append(im);
+      }
       const yt = w.link && w.link.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([\w-]{11})/);
       if (yt) {   // the video's own thumbnail; on a web server a click plays it in place, otherwise it opens YouTube
         const t = el("a", "thumb"); t.href = w.link; t.target = "_blank"; t.rel = "noopener"; t.setAttribute("aria-label", "Play " + w.title);
@@ -297,7 +306,7 @@ function showBox(d) {
         li.append(t);
       }
       if (w.link) { const a = el("a", "btn", w.linkLabel || (yt ? "▶ Watch on YouTube" : "▶ Watch")); a.href = w.link; a.target = "_blank"; a.rel = "noopener"; li.append(a); }
-      else li.append(el("span", "out", "Tape checked out — ask at the counter"));
+      else if (!w.image) li.append(el("span", "out", "Tape checked out — ask at the counter"));
       ol.append(li);
     });
     body.append(ol);
@@ -311,6 +320,40 @@ function showBox(d) {
   dlg.showModal(); dlg.scrollTop = 0;
 }
 dlg.addEventListener("close", () => { clearInterval(spin); body.replaceChildren(); });
-$("#close").onclick = () => dlg.close();
-dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
+
+// ---------- putting a tape back ----------
+// a box (or the TV) shrinks away, then done() runs
+function shrinkAway(d, done) {
+  if (d.classList.contains("leaving")) return;
+  if (reduce || !d.animate) { d.close(); return done && done(); }
+  d.classList.add("leaving");
+  const a = d.animate([{ transform: "none", opacity: 1 }, { transform: "scale(.88) translateY(30px)", opacity: 0 }], { duration: 240, easing: "ease-in", fill: "forwards" });
+  a.onfinish = () => { d.close(); a.cancel(); d.classList.remove("leaving"); done && done(); };
+}
+// the box shrinks, then the cover turns once and flies back into its slot on the shelf
+function ejectTape() {
+  if (!dlg.open || dlg.classList.contains("leaving")) return;
+  const btn = shelfBtn, src = btn && btn.querySelector("canvas"), cov = $("#box-cover");
+  if (!src || reduce || !src.animate) return shrinkAway(dlg);
+  const r0 = cov.getBoundingClientRect(); btn.classList.add("gone");
+  shrinkAway(dlg, () => {
+    const r1 = src.getBoundingClientRect(), f = document.createElement("canvas");
+    f.className = "fly"; f.width = cov.width; f.height = cov.height; f.getContext("2d").drawImage(cov, 0, 0);
+    Object.assign(f.style, { left: r0.left + "px", top: r0.top + "px", width: r0.width + "px", height: r0.height + "px" });
+    document.body.append(f);
+    const dx = r1.left - r0.left, dy = r1.top - r0.top, sc = r1.width / r0.width, o = "0 0";
+    f.animate([
+      { transform: "translate(0,0) scale(1) rotateY(0)", transformOrigin: o, opacity: 0 },
+      { transform: "translate(0,0) scale(1) rotateY(0)", transformOrigin: o, opacity: 1, offset: .12 },
+      { transform: `translate(${dx * .5}px,${dy * .5 - 60}px) scale(${(1 + sc) / 2}) rotateY(180deg)`, transformOrigin: o, opacity: 1, offset: .55 },
+      { transform: `translate(${dx}px,${dy}px) scale(${sc}) rotateY(360deg)`, transformOrigin: o, opacity: 1 }
+    ], { duration: 520, easing: "cubic-bezier(.5,0,.3,1)" }).onfinish = () => {
+      f.remove(); btn.classList.remove("gone");
+      src.animate([{ transform: "translateY(-14px)" }, { transform: "translateY(0)" }], { duration: 260, easing: "cubic-bezier(.3,1.6,.5,1)" });   // lands with a little bounce
+    };
+  });
+}
+$("#close").onclick = ejectTape;
+dlg.addEventListener("click", e => { if (e.target === dlg) ejectTape(); });
+dlg.addEventListener("cancel", e => { e.preventDefault(); ejectTape(); });   // Esc
 })().catch(e => console.error(e));

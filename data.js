@@ -7,7 +7,11 @@
      tagline  the line on the box
      blurb    back-of-the-box text, written in the voice of the genre
      works    the real projects inside (leave link "" if there is none)
+              image: "img/file.jpg" shows a picture with the work (poster / thumbnail)
+              imageShape: "poster" for a tall poster, otherwise a wide picture
+     cta      optional big button under the blurb: { label, href }
      colors   panel colours when the tape is opened
+   The order of the tapes below is the order they sit on the shelves.
 ------------------------------------------------------------------- */
 window.DATA = {
   owner: {
@@ -26,11 +30,12 @@ window.DATA = {
       id: "short-film", name: "Short Film", title: ["SHORT", "FILM"], art: "adventure", genre: "Adventure",
       colors: { bg: "#f08a4b", fg: "#1b1a17", acc: "#f4c542" },
       tagline: "Two expeditions into the lost temples of memory.",
-      blurb: "Somewhere past the last marked reel on the map, one filmmaker went digging for the things most people leave buried. No whip, no hat — just a camera, an edit suite, and a bad habit of opening doors marked DO NOT OPEN. He came back with two short films.",
+      blurb: "I bring out-of-the-box concepts to the script and decisive, assured leadership to the set. As a Writer-Director, I foster a highly collaborative environment to ensure that even the most unconventional ideas translate seamlessly to the screen.",
       works: [
         {
-          title: "All About Melly", year: "2023", role: "Co-Producer, Writer, Director, Editor",
-          text: "The archive raid. Armed only with his own real audio-visual archive, the filmmaker unearths a fictional story about grief, memory, and moving on. This one really does belong in a museum: it screened at the National Gallery of Indonesia, 1 international film festival and 5 national film festivals.",
+          title: "Segalanya Tentang Melly", year: "2023", role: "Co-Producer, Writer, Director, Editor",
+          text: "A story about loss and how to deal with that loss. An experimental film using the filmmakers real audio-visual archive to craft a fictional narrative about grief, memory, and moving on. Screened at the National Gallery of Indonesia, 1 International film festival, and 5 national film festivals.",
+          image: "img/poster-melly.jpg", imageShape: "poster", imageAlt: "Poster of Segalanya Tentang Melly",
           link: "https://drive.google.com/file/d/1ga_EJ53XEZ3vcpf_rZYJ8ZCwE--yi7Pk/view?usp=sharing"
         },
         {
@@ -41,23 +46,24 @@ window.DATA = {
       ]
     },
     {
-      id: "video-essay", name: "Video Essay", title: ["VIDEO", "ESSAY"], art: "grindhouse", genre: "Grindhouse",
-      colors: { bg: "#f4c542", fg: "#1b1a17", acc: "#e2452f" },
-      tagline: "They said it could never be shown again!",
-      blurb: "SEE the rise! SHUDDER at the fall! One man walks alone into the darkest back room of the video store and comes out with the whole lurid history. Not for the faint of heart. No one admitted during the last ten minutes.",
+      id: "content-specialist", name: "Content Specialist", title: ["CONTENT", "SPECIALIST"], art: "sports", genre: "Sports Drama",
+      colors: { bg: "#5fae7b", fg: "#f6ecd2", acc: "#f4c542" },
+      tagline: "The archive was benched for years. One channel put it back in the game.",
+      blurb: "My first project at ANTV is to manage the “Lensor Match” youtube channel. The data speak for itself, since then: 200.000+ subscribers, 166.357.284 views, 3.668.742 in watch time, and Rp. 174.062.709 from ads revenue.",
       works: [
         {
-          title: "The Rise and Fall of Indonesian Exploitation Film", year: "2026", role: "Writer, Presenter",
-          text: "A video essay exploring the vast history of Indonesian exploitation film — in shocking colour.",
-          link: "https://drive.google.com/file/d/1AZde1kzyUMJHwG61QehhfMweX0KaRN1j/view?usp=sharing"
+          title: "Lensor Match", year: "2024–2025", role: "Content Specialist, ANTV",
+          text: "The first official release of the archive since it aired. Managed the channel, cut long-form and short-form videos, designed clickable YouTube thumbnails, and wrote targeted SEO copy to bring Indonesian sports history back into play.",
+          image: "img/lensor-match.jpg", imageAlt: "Clickable thumbnails from the Lensor Match YouTube channel",
+          link: "https://www.youtube.com/channel/UCbmn7BEQiNXFHarQniBi_aQ", linkLabel: "▶ Visit the channel"
         }
       ]
     },
     {
-      id: "journalistic-video", name: "Journalistic Video", title: ["JOURNALISTIC", "VIDEO"], art: "noir", genre: "Film Noir",
+      id: "journalistic-video", name: "Journalist Video", title: ["JOURNALIST", "VIDEO"], art: "noir", genre: "Film Noir",
       colors: { bg: "#1b1a17", fg: "#f6ecd2", acc: "#f4c542" },
       tagline: "The city never talks. He makes it.",
-      blurb: "The story walked in at midnight, wanting to stay hidden. They always do. So he worked the case the long way round: deep-dive investigative research, on-camera interviews that land, a producing workflow with more moving parts than a getaway, and cinematic videography cut for digital platforms. One video journalist. Start to finish.",
+      blurb: "Versatile video journalist with complete full-lifecycle production experience. Skilled in deep dive investigative research, conducting high impact on camera interviews, managing complex producing workflows, and directing cinematic videography tailored for digital platforms.",
       works: [
         /* MyCity (2023) — YouTube links play right inside the panel */
         { title: "Warga Rawajati Menanti Hak Ganti Rugi", year: "MyCity, 2023", role: "Video Journalist", text: "Case file one: the residents of Rawajati, still waiting on their compensation.", link: "https://www.youtube.com/watch?v=hIDxomO71x4", thumb: "https://i.ytimg.com/vi/hIDxomO71x4/maxresdefault.jpg" },
@@ -67,15 +73,15 @@ window.DATA = {
       ]
     },
     {
-      id: "content-specialist", name: "Content Specialist", title: ["CONTENT", "SPECIALIST"], art: "sports", genre: "Sports Drama",
-      colors: { bg: "#5fae7b", fg: "#f6ecd2", acc: "#f4c542" },
-      tagline: "The archive was benched for years. One channel put it back in the game.",
-      blurb: "Nobody had seen these matches since the night they aired. Classic Indonesian football, 1994 to 2015, sitting on the bench gathering dust. Then a rookie at ANTV got handed his first project, and the comeback was on.",
+      id: "video-essay", name: "Video Essay", title: ["VIDEO", "ESSAY"], art: "grindhouse", genre: "Grindhouse",
+      colors: { bg: "#f4c542", fg: "#1b1a17", acc: "#e2452f" },
+      tagline: "They said it could never be shown again!",
+      blurb: "Translating deep rabbit-hole research into highly entertaining, bite-sized video essays. Basically, I read the heavy stuff so you can get the fun, educational facts in a neat little package.",
       works: [
         {
-          title: "Lensor Match", year: "2024–2025", role: "Content Specialist, ANTV",
-          text: "The first official release of the archive since it aired. Managed the channel, cut long-form and short-form videos, designed clickable YouTube thumbnails, and wrote targeted SEO copy to bring Indonesian sports history back into play.",
-          link: "https://www.youtube.com/channel/UCbmn7BEQiNXFHarQniBi_aQ", linkLabel: "▶ Visit the channel"
+          title: "The Rise and Fall of Indonesian Exploitation Film", year: "2026", role: "Writer, Presenter",
+          text: "A video essay exploring the vast history of Indonesian exploitation film — in shocking colour.",
+          link: "https://drive.google.com/file/d/1AZde1kzyUMJHwG61QehhfMweX0KaRN1j/view?usp=sharing"
         }
       ]
     },
@@ -83,14 +89,14 @@ window.DATA = {
       id: "livestream", name: "Livestream", title: ["LIVE", "STREAM"], art: "space", genre: "Sci-Fi",
       colors: { bg: "#3d7dc4", fg: "#f6ecd2", acc: "#f4c542" },
       tagline: "Live. Across the nation. No second take.",
-      blurb: "Mission control has one rule: when the red light comes on, there is no going back. Six transmissions, beamed out in real time for ANTV. All systems go.",
+      blurb: "Managed multi-input OBS encoding, switching, overlays, and live audio while troubleshooting real time signal and hardware issues under pressure to ensure zero downtime broadcasts.",
       works: [
-        { title: "Pelantikan Presiden & Wapres 2024", year: "2024", role: "Livestream, ANTV", text: "The presidential and vice-presidential inauguration, live.", link: "" },
-        { title: "TOPKIN Spesial Pemilu 2024", year: "2024", role: "Livestream, ANTV", text: "Election special, live.", link: "" },
-        { title: "Sidang Isbat 2026", year: "2026", role: "Livestream, ANTV", text: "Live coverage of the Sidang Isbat.", link: "" },
-        { title: "Kangen Joget ANTV", year: "", role: "Livestream, ANTV", text: "Live event stream.", link: "" },
-        { title: "Grebeg Pasar ANTV", year: "", role: "Livestream, ANTV", text: "Live event stream.", link: "" },
-        { title: "X-School Fest ANTV", year: "", role: "Livestream, ANTV", text: "Live event stream.", link: "" }
+        { title: "Pelantikan Presiden & Wapres 2024", year: "2024", role: "Livestream, ANTV", text: "The presidential and vice-presidential inauguration, live.", image: "img/ls-pelantikan.jpg", imageAlt: "Livestream thumbnail: Pelantikan Presiden & Wapres 2024", link: "" },
+        { title: "TOPKIN Spesial Pemilu 2024", year: "2024", role: "Livestream, ANTV", text: "Election special, live.", image: "img/ls-topkin.jpg", imageAlt: "Livestream thumbnail: TOPKIN Spesial Pemilu 2024", link: "" },
+        { title: "Sidang Isbat 2026", year: "2026", role: "Livestream, ANTV", text: "Live coverage of the Sidang Isbat.", image: "img/ls-sidang-isbat.jpg", imageAlt: "Livestream thumbnail: Sidang Isbat 2026", link: "" },
+        { title: "Kangen Joget ANTV", year: "", role: "Livestream, ANTV", text: "Live event stream.", image: "img/ls-kangen-joget.jpg", imageAlt: "Livestream thumbnail: Kangen Joget ANTV", link: "" },
+        { title: "Grebeg Pasar ANTV", year: "", role: "Livestream, ANTV", text: "Live event stream.", image: "img/ls-grebeg-pasar.jpg", imageAlt: "Livestream thumbnail: Grebeg Pasar ANTV", link: "" },
+        { title: "X-School Fest ANTV", year: "", role: "Livestream, ANTV", text: "Live event stream.", image: "img/ls-x-school-fest.jpg", imageAlt: "Livestream thumbnail: X-School Fest ANTV", link: "" }
       ]
     },
     {
@@ -108,7 +114,8 @@ window.DATA = {
       id: "photography", name: "Photography", title: ["photo", "graphy"], art: "arthouse", genre: "Art House",
       colors: { bg: "#f6ecd2", fg: "#1b1a17", acc: "#e2452f" },
       tagline: "Un film fixe. A film that does not move.",
-      blurb: "Nothing happens. Everything is seen. A man with a camera waits for the light, and the light, eventually, agrees. Presented in stillness, with long silences.",
+      blurb: "The world through my eyes.",
+      cta: { label: "◉ More on Instagram @foto.grafra", href: "https://www.instagram.com/foto.grafra/" },
       works: [],
       empty: "Prints are still in the darkroom — back on this shelf soon.",
       /* These six files are small previews taken from the old deck. Replace each file in /photos with the

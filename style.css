@@ -161,6 +161,9 @@ dialog{background:var(--bg,var(--cream));color:var(--fg,var(--ink));border:4px s
 dialog[open]{animation:pop .3s cubic-bezier(.3,1.4,.5,1)}
 @keyframes pop{from{transform:scale(.9);opacity:0}}
 dialog::backdrop{background:rgba(27,26,23,.82)}
+dialog.leaving::backdrop{animation:fadeout .24s ease-in forwards}
+@keyframes fadeout{to{opacity:0}}
+dialog.leaving{pointer-events:none}
 #close{float:right;font-family:var(--osd);font-size:1.3rem;text-transform:uppercase;background:var(--ink);color:var(--cream);border:0;padding:3px 12px;cursor:pointer}
 .box-in{clear:both;display:grid;grid-template-columns:minmax(150px,240px) 1fr;gap:26px;padding-top:12px;align-items:start}
 .box-art canvas{display:block;width:100%;height:auto;border:3px solid var(--ink)}
@@ -180,6 +183,10 @@ dialog h3{font-family:var(--osd);font-size:1.4rem;font-weight:400;text-transform
 .works .meta{font-size:.85rem;opacity:.85;display:block;margin:.2em 0 .4em}
 .works p{margin:0 0 .6em}
 .works .btn{font-size:1.25rem;background:var(--acc)}
+.p-cta{margin:0 0 1.4em}
+.p-cta .btn{background:var(--acc);color:var(--cream)}
+.still{display:block;width:100%;max-width:460px;border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink);margin:.2em 0 .9em;background:#000}
+.still-poster{max-width:220px}
 .out{font-family:var(--osd);font-weight:400;font-size:1.2rem;text-transform:uppercase;opacity:.75}
 .thumb{display:block;position:relative;aspect-ratio:16/9;border:3px solid var(--ink);margin:0 0 .8em;background:#000;overflow:hidden;box-shadow:4px 4px 0 var(--ink)}
 .thumb img{display:block;width:100%;height:100%;object-fit:cover}
